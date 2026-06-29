@@ -1,0 +1,7 @@
+[Unit]
+Description=Clipku database and source backup
+
+[Service]
+Type=oneshot
+User=ubuntu
+ExecStart=/home/ubuntu/clipku-streaming/scripts/backup.sh

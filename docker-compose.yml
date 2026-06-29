@@ -1,0 +1,15 @@
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: clipku_streaming
+      MYSQL_USER: clipku
+      MYSQL_PASSWORD: clipku
+      MYSQL_ROOT_PASSWORD: change-this-root-password
+    ports: ["3306:3306"]
+    volumes: [clipku_db:/var/lib/mysql]
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+volumes:
+  clipku_db:

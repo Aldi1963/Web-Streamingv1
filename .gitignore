@@ -1,0 +1,10 @@
+node_modules
+.next
+.next.*
+.env
+coverage
+*.log
+*.tar.gz
+*.zip
+*.tsbuildinfo
+*credentials*

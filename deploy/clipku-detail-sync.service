@@ -1,0 +1,14 @@
+[Unit]
+Description=Clipku detail, episode, and playback enrichment
+After=network-online.target mysql.service
+
+[Service]
+Type=oneshot
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/clipku-streaming
+Environment=ENRICH_BATCH=50
+ExecStart=/usr/bin/npm run sync:details
+Nice=15
+NoNewPrivileges=true
+PrivateTmp=true

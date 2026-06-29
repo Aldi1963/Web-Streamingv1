@@ -1,0 +1,325 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  CONTENT_MANAGER
+  USER
+  SUBSCRIBER
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  EXPIRED
+  CANCELLED
+}
+
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  GRACE
+  EXPIRED
+  CANCELLED
+}
+
+model User {
+  id String @id @default(cuid())
+  name String
+  email String @unique
+  passwordHash String
+  role Role @default(USER)
+  emailVerifiedAt DateTime?
+  rememberToken String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  sessions DeviceSession[]
+  subscriptions Subscription[]
+  payments Payment[]
+  watchProgress WatchProgress[]
+  watchlist Watchlist[]
+  favorites Favorite[]
+  reviews Review[]
+}
+
+model DeviceSession {
+  id String @id @default(cuid())
+  userId String
+  tokenHash String @unique
+  deviceName String?
+  browser String?
+  ip String?
+  lastActiveAt DateTime @default(now())
+  expiresAt DateTime
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId, expiresAt])
+}
+
+model Plan {
+  id String @id @default(cuid())
+  name String @unique
+  slug String @unique
+  price Decimal @db.Decimal(12,2)
+  durationDays Int
+  maxDevices Int @default(1)
+  maxResolution String @default("720p")
+  providerAccess Json?
+  isTrial Boolean @default(false)
+  isActive Boolean @default(true)
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id String @id @default(cuid())
+  userId String
+  planId String
+  status SubscriptionStatus @default(ACTIVE)
+  startsAt DateTime
+  expiresAt DateTime
+  graceEndsAt DateTime?
+  user User @relation(fields: [userId], references: [id])
+  plan Plan @relation(fields: [planId], references: [id])
+  @@index([userId, status, expiresAt])
+}
+
+model Payment {
+  id String @id @default(cuid())
+  invoiceNumber String @unique
+  userId String
+  planId String?
+  provider String
+  providerReference String?
+  amount Decimal @db.Decimal(12,2)
+  status PaymentStatus @default(PENDING)
+  payload Json?
+  paidAt DateTime?
+  verifiedAt DateTime?
+  expiresAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id])
+  @@index([userId, status])
+}
+
+model ApiEndpoint {
+  id String @id @default(cuid())
+  providerName String
+  providerSlug String
+  providerType String
+  method String @default("GET")
+  path String
+  fullUrl String
+  endpointName String
+  description String? @db.Text
+  queryParamsJson Json?
+  responseSampleJson Json?
+  responseMappingJson Json?
+  isActive Boolean @default(true)
+  cacheEnabled Boolean @default(true)
+  cacheTtl Int @default(3600)
+  timeout Int @default(30)
+  retryLimit Int @default(2)
+  lastTestStatus Int?
+  lastTestResponse Json?
+  lastTestAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  logs ApiLog[]
+  @@unique([providerSlug, path])
+  @@index([providerType, isActive])
+}
+
+model ApiLog {
+  id String @id @default(cuid())
+  endpointId String?
+  providerName String
+  method String
+  url String
+  requestParams Json?
+  responseStatus Int?
+  responseBody Json?
+  responseTime Int
+  errorMessage String?
+  createdAt DateTime @default(now())
+  endpoint ApiEndpoint? @relation(fields: [endpointId], references: [id], onDelete: SetNull)
+  @@index([providerName, createdAt])
+}
+
+model ApiSyncLog {
+  id String @id @default(cuid())
+  providerName String
+  endpointPath String @db.Text
+  totalData Int @default(0)
+  successCount Int @default(0)
+  failedCount Int @default(0)
+  status String
+  message String? @db.Text
+  startedAt DateTime
+  finishedAt DateTime?
+}
+
+model SyncCheckpoint {
+  id String @id @default(cuid())
+  providerSlug String
+  endpointPath String
+  nextPage Int @default(1)
+  completed Boolean @default(false)
+  discoveredCount Int @default(0)
+  lastError String? @db.Text
+  lastSuccessAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([providerSlug, endpointPath])
+  @@index([completed, updatedAt])
+}
+
+model ApiCache {
+  key String @id
+  value Json
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  @@index([expiresAt])
+}
+
+model Content {
+  id String @id @default(cuid())
+  providerName String
+  providerSlug String
+  clipkuContentId String
+  title String
+  slug String @unique
+  description String? @db.Text
+  posterUrl String? @db.Text
+  thumbnailUrl String? @db.Text
+  bannerUrl String? @db.Text
+  trailerUrl String? @db.Text
+  videoUrl String? @db.Text
+  hlsUrl String? @db.Text
+  subtitleUrl String? @db.Text
+  category String? @db.Text
+  genre Json?
+  language String?
+  duration Int?
+  releaseYear Int?
+  rating Float?
+  type String
+  isPremium Boolean @default(true)
+  isActive Boolean @default(true)
+  isFeatured Boolean @default(false)
+  packageAccess Json?
+  seoTitle String?
+  seoDescription String?
+  apiRawResponse Json
+  lastSyncedAt DateTime @default(now())
+  detailSyncedAt DateTime?
+  playbackStatus String? @default("PENDING")
+  playbackCheckedAt DateTime?
+  viewCount Int @default(0)
+  trendingScore Float @default(0)
+  lastViewedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  episodes Episode[]
+  progress WatchProgress[]
+  watchlisted Watchlist[]
+  favorited Favorite[]
+  reviews Review[]
+  @@unique([providerSlug, clipkuContentId])
+  @@index([type, isActive, isFeatured])
+  @@index([detailSyncedAt, isActive])
+  @@index([playbackStatus, playbackCheckedAt])
+  @@index([providerSlug, language])
+  @@index([trendingScore, viewCount])
+}
+
+model Episode {
+  id String @id @default(cuid())
+  contentId String
+  providerName String
+  clipkuEpisodeId String
+  episodeNumber Int
+  title String?
+  description String? @db.Text
+  thumbnailUrl String? @db.Text
+  videoUrl String? @db.Text
+  hlsUrl String? @db.Text
+  subtitleUrl String? @db.Text
+  apiRawResponse Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  @@unique([contentId, clipkuEpisodeId])
+}
+
+model WatchProgress {
+  id String @id @default(cuid())
+  userId String
+  contentId String
+  episodeId String?
+  positionSeconds Int @default(0)
+  durationSeconds Int @default(0)
+  lastWatchedAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  @@unique([userId, contentId, episodeId])
+}
+
+model Watchlist {
+  id String @id @default(cuid())
+  userId String
+  contentId String
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  @@unique([userId, contentId])
+}
+
+model Favorite {
+  id String @id @default(cuid())
+  userId String
+  contentId String
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  @@unique([userId, contentId])
+}
+
+model Review {
+  id String @id @default(cuid())
+  userId String
+  contentId String
+  rating Int
+  body String @db.Text
+  isApproved Boolean @default(false)
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+}
+
+model AppSetting {
+  key String @id
+  value String? @db.Text
+  encrypted Boolean @default(false)
+  updatedById String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AdminAuditLog {
+  id String @id @default(cuid())
+  adminId String
+  action String
+  entityType String
+  entityId String?
+  detail Json?
+  createdAt DateTime @default(now())
+  @@index([adminId, createdAt])
+}

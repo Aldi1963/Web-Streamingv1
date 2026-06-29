@@ -1,0 +1,48 @@
+{
+  "name": "clipku-streaming",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "prisma generate && next build --webpack",
+    "start": "next start -H 127.0.0.1",
+    "lint": "next lint",
+    "db:push": "prisma db push",
+    "db:seed": "tsx prisma/seed.ts",
+    "check": "tsx scripts/check-error.ts",
+    "smoke": "sh scripts/smoke-production.sh",
+    "sync:full": "tsx scripts/full-sync.ts",
+    "sync:incremental": "tsx scripts/full-sync.ts --incremental",
+    "sync:details": "tsx scripts/enrich-content.ts",
+    "audit:playback": "tsx scripts/audit-playback.ts",
+    "trending:update": "tsx scripts/update-trending.ts",
+    "backup": "sh scripts/backup.sh",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "bcryptjs": "^2.4.3",
+    "hls.js": "^1.5.18",
+    "jose": "^5.9.6",
+    "lucide-react": "^1.21.0",
+    "next": "^16.2.9",
+    "nodemailer": "^9.0.1",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^22.10.2",
+    "@types/nodemailer": "^7.0.11",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "prisma": "^5.22.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^4.1.9"
+  },
+  "overrides": {
+    "postcss": "^8.5.10"
+  }
+}

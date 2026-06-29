@@ -1,0 +1,67 @@
+import "./globals.css";
+import "./fullscreen.css";
+import Link from "next/link";
+import { User, Crown } from "lucide-react";
+import { Suspense } from "react";
+import { BottomNavigation, SearchForm, SidebarNavigation } from "@/components/app-navigation";
+import { auth } from "@/services/auth-service";
+
+export const metadata = {
+  title: "Clipku Streaming",
+  description: "Streaming legal dari provider Clipku API",
+};
+
+const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
+
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const user = await auth.currentUser();
+  return (
+    <html lang="id">
+      <body>
+        <div className="app-layout">
+          {/* Sidebar */}
+          <aside className="sidebar">
+            <Link className="brand" href="/" prefetch={false}>CLIPKU+</Link>
+
+            <Suspense><SearchForm compact /></Suspense>
+            <SidebarNavigation />
+
+            <div className="sidebar-section">
+              <span className="sidebar-label">Tahun</span>
+              <div className="sidebar-years">
+                {years.map(y => (
+                  <Link key={y} href={`/browse?year=${y}`} className="sidebar-year" prefetch={false}>{y}</Link>
+                ))}
+              </div>
+            </div>
+
+            <div className="sidebar-footer">
+              <Link href={user ? "/dashboard" : "/login"} className="sidebar-link" prefetch={false}>
+                <User size={20} className="sidebar-icon" /> {user ? user.name : "Masuk / Daftar"}
+              </Link>
+              <Link href="/plans" className="btn btn-sm" style={{ width: "100%", justifyContent: "center", gap: 6 }} prefetch={false}>
+                <Crown size={16} /> Langganan
+              </Link>
+            </div>
+          </aside>
+
+          {/* Main */}
+          <main className="main-content">
+            {/* Mobile top bar */}
+            <header className="mobile-header">
+              <Link className="brand" href="/" prefetch={false}>CLIPKU+</Link>
+              <Suspense><SearchForm /></Suspense>
+              <Link href={user ? "/dashboard" : "/login"} className="btn btn-sm" prefetch={false}>
+                {user ? "Akun" : "Masuk"}
+              </Link>
+            </header>
+            {children}
+
+            {/* Mobile Bottom Nav */}
+            <BottomNavigation loggedIn={Boolean(user)} />
+          </main>
+        </div>
+      </body>
+    </html>
+  );
+}

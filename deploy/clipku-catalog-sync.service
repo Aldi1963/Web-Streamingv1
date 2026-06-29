@@ -1,0 +1,14 @@
+[Unit]
+Description=Clipku incremental catalog sync
+After=network-online.target mysql.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/clipku-streaming
+ExecStart=/usr/bin/npm run sync:incremental
+Nice=10
+NoNewPrivileges=true
+PrivateTmp=true

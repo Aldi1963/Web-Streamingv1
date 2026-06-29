@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Clipku catalog sync every 6 hours
+
+[Timer]
+OnBootSec=10min
+OnUnitActiveSec=6h
+RandomizedDelaySec=5min
+Persistent=true
+
+[Install]
+WantedBy=timers.target
