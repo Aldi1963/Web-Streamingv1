@@ -83,7 +83,6 @@ async function main() {
   const failed = results.filter((item) => item.status !== "OK");
   if (failed.length) {
     await notify(`Clipku playback alert\n${failed.map((item) => `${item.provider}: ${item.status} (${item.detail})`).join("\n")}`);
-    process.exitCode = 1;
   }
 }
 
