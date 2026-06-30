@@ -1,5 +1,5 @@
 [Unit]
-Description=Clipku playback audit and trending refresh
+Description=Clipku playback, media audit, and trending refresh
 After=network-online.target mysql.service
 
 [Service]
@@ -8,4 +8,5 @@ User=ubuntu
 WorkingDirectory=/home/ubuntu/clipku-streaming
 EnvironmentFile=/home/ubuntu/clipku-streaming/.env
 ExecStart=/usr/bin/npm run audit:playback
+ExecStart=/usr/bin/npm run audit:media
 ExecStart=/usr/bin/npm run trending:update

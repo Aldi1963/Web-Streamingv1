@@ -1,95 +1,146 @@
 import { NextRequest } from "next/server";
+import https from "node:https";
+import http from "node:http";
+import { Readable } from "node:stream";
 import { clipku } from "@/services/clipku-api-service";
-import { auth } from "@/services/auth-service";
 
 export const dynamic = "force-dynamic";
 
-const WINDOW_MS = 60_000;
-const MAX_REQUESTS = 120;
-const requests = new Map<string, { count: number; resetAt: number }>();
-
-function takeRateLimit(key: string) {
-  const now = Date.now();
-  const current = requests.get(key);
-  if (!current || current.resetAt <= now) {
-    requests.set(key, { count: 1, resetAt: now + WINDOW_MS });
-    return { allowed: true, retryAfter: 0 };
-  }
-  current.count += 1;
-  return {
-    allowed: current.count <= MAX_REQUESTS,
-    retryAfter: Math.max(1, Math.ceil((current.resetAt - now) / 1000)),
-  };
-}
-
-function logProxy(event: string, fields: Record<string, unknown>) {
-  console.info(JSON.stringify({ scope: "video-proxy", event, at: new Date().toISOString(), ...fields }));
-}
+const PROXYABLE_PROVIDERS = new Set(["dramabox", "netshort"]);
+const INSECURE_TLS_HOSTS = new Set(["awscdn.netshort.com"]);
 
 function isAllowedVideoUrl(value: string) {
   try {
     const url = new URL(value);
     return url.protocol === "https:" &&
-      (url.hostname === "dramaboxdb.com" || url.hostname.endsWith(".dramaboxdb.com"));
+      (
+        url.hostname === "dramaboxdb.com" ||
+        url.hostname.endsWith(".dramaboxdb.com") ||
+        url.hostname === "awscdn.netshort.com" ||
+        url.hostname.endsWith(".netshort.com")
+      );
   } catch {
     return false;
   }
 }
 
-export async function GET(request: NextRequest) {
-  const startedAt = Date.now();
-  const user = await auth.currentUser();
-  if (!user) {
-    return Response.json({ message: "Silakan masuk untuk menonton." }, { status: 401 });
+function extractStreamUrl(value: unknown, depth = 0): string | null {
+  if (depth > 10 || !value) return null;
+  if (typeof value === "string") {
+    const isMediaUrl =
+      /\.(m3u8|mp4)(?:[?&]|$)/i.test(value) ||
+      /\/proxy\/m3u8(?:\?|$)/i.test(value) ||
+      /[?&]mime_type=video_(?:mp4|h264)(?:[&#]|$)/i.test(value) ||
+      /^https:\/\/[^/]+\.montagehub\.xyz\/.+[?&]auth_key=/i.test(value);
+    return /^https?:\/\//i.test(value) && isMediaUrl ? value : null;
   }
-  const limit = takeRateLimit(user.id);
-  if (!limit.allowed) {
-    return Response.json(
-      { message: "Terlalu banyak permintaan video. Coba lagi sebentar." },
-      { status: 429, headers: { "Retry-After": String(limit.retryAfter) } },
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = extractStreamUrl(item, depth + 1);
+      if (found) return found;
+    }
+    return null;
+  }
+  if (typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    for (const key of ["play_url", "url", "stream_url", "hls_url", "filePath", "video_url", "main_url", "backup_url", "source"]) {
+      const item = record[key];
+      if (typeof item === "string" && /^https?:\/\//i.test(item) && isAllowedVideoUrl(item)) return item;
+    }
+    for (const item of Object.values(record)) {
+      const found = extractStreamUrl(item, depth + 1);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+function selectEpisodePayload(raw: unknown, provider: string, episode: number): unknown {
+  if (!raw || typeof raw !== "object") return raw;
+  const record = raw as Record<string, unknown>;
+  if (provider === "goodshort") {
+    const data = record.data;
+    if (data && typeof data === "object") {
+      const list = (data as Record<string, unknown>).downloadList;
+      if (Array.isArray(list)) return list[episode - 1] ?? null;
+    }
+  }
+  return raw;
+}
+
+function requestVideoStream(source: string, range: string | null, redirectCount = 0): Promise<Response> {
+  return new Promise((resolve, reject) => {
+    const url = new URL(source);
+    const client = url.protocol === "http:" ? http : https;
+    const req = client.request(
+      url,
+      {
+        method: "GET",
+        headers: {
+          Accept: "video/mp4,video/*;q=0.9,*/*;q=0.8",
+          "User-Agent": "Mozilla/5.0",
+          ...(range ? { Range: range } : {}),
+        },
+        rejectUnauthorized: !INSECURE_TLS_HOSTS.has(url.hostname),
+      },
+      (res) => {
+        const status = res.statusCode ?? 500;
+        const location = res.headers.location;
+        if (status >= 300 && status < 400 && location && redirectCount < 3) {
+          res.resume();
+          resolve(requestVideoStream(new URL(location, source).toString(), range, redirectCount + 1));
+          return;
+        }
+
+        const headers = new Headers();
+        for (const name of ["accept-ranges", "cache-control", "content-length", "content-range", "content-type", "etag", "last-modified"]) {
+          const value = res.headers[name];
+          if (typeof value === "string") headers.set(name, value);
+        }
+
+        resolve(
+          new Response(Readable.toWeb(res) as ReadableStream, {
+            status,
+            headers,
+          }),
+        );
+      },
     );
+
+    req.setTimeout(20_000, () => req.destroy(new Error("Request timeout")));
+    req.on("error", reject);
+    req.end();
+  });
+}
+
+export async function GET(request: NextRequest) {
+  const provider = request.nextUrl.searchParams.get("provider") ?? "dramabox";
+  let source = request.nextUrl.searchParams.get("url");
+  const contentId = request.nextUrl.searchParams.get("contentId") ?? request.nextUrl.searchParams.get("bookId");
+  const episode = Math.max(1, Number(request.nextUrl.searchParams.get("ep") ?? 1));
+
+  if (!PROXYABLE_PROVIDERS.has(provider)) {
+    return Response.json({ message: "Provider video tidak didukung." }, { status: 400 });
   }
 
-  let source: string | null = null;
-  const bookId = request.nextUrl.searchParams.get("bookId");
-  const rawEpisode = Number(request.nextUrl.searchParams.get("ep") ?? 1);
-  const episode = Number.isSafeInteger(rawEpisode) ? Math.max(1, Math.min(rawEpisode, 10_000)) : 1;
-
-  if (bookId && /^[\w-]{1,128}$/.test(bookId)) {
+  if (!source && contentId) {
     try {
-      const payload = await clipku.getStream("dramabox", bookId, episode);
-      const data = payload && typeof payload === "object"
-        ? (payload as Record<string, unknown>).data
-        : null;
-      const videoUrl = data && typeof data === "object"
-        ? (data as Record<string, unknown>).videoUrl
-        : null;
-      source = typeof videoUrl === "string" ? videoUrl : null;
+      const payload = await clipku.getStream(provider, contentId, episode);
+      source = extractStreamUrl(selectEpisodePayload(payload, provider, episode));
     } catch {
       source = null;
     }
   }
 
   if (!source || !isAllowedVideoUrl(source)) {
-    logProxy("invalid-source", { userId: user.id, bookId, episode });
     return Response.json({ message: "URL video tidak valid." }, { status: 400 });
   }
 
-  const headers = new Headers({
-    Accept: "video/mp4,video/*;q=0.9,*/*;q=0.8",
-    "User-Agent": request.headers.get("user-agent") ?? "Mozilla/5.0",
-  });
   const range = request.headers.get("range");
-  if (range) headers.set("Range", range);
 
   try {
-    const upstream = await fetch(source, {
-      headers,
-      cache: "no-store",
-      signal: AbortSignal.timeout(20_000),
-    });
+    const upstream = await requestVideoStream(source, range);
     if (!upstream.ok && upstream.status !== 206) {
-      logProxy("upstream-error", { userId: user.id, bookId, episode, status: upstream.status, durationMs: Date.now() - startedAt });
       return Response.json({ message: "Sumber video tidak tersedia." }, { status: upstream.status });
     }
 
@@ -97,26 +148,17 @@ export async function GET(request: NextRequest) {
       "Accept-Ranges": upstream.headers.get("accept-ranges") ?? "bytes",
       "Cache-Control": "private, no-store",
       "Content-Type": upstream.headers.get("content-type") ?? "video/mp4",
-      "X-Content-Type-Options": "nosniff",
     });
     for (const name of ["content-length", "content-range", "etag", "last-modified"]) {
       const value = upstream.headers.get(name);
       if (value) responseHeaders.set(name, value);
     }
 
-    logProxy("stream", { userId: user.id, bookId, episode, status: upstream.status, durationMs: Date.now() - startedAt });
     return new Response(upstream.body, {
       status: upstream.status,
       headers: responseHeaders,
     });
-  } catch (error) {
-    logProxy("fetch-failed", {
-      userId: user.id,
-      bookId,
-      episode,
-      durationMs: Date.now() - startedAt,
-      error: error instanceof Error ? error.name : "unknown",
-    });
+  } catch {
     return Response.json({ message: "Gagal mengambil sumber video." }, { status: 502 });
   }
 }

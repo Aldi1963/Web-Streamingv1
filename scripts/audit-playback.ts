@@ -1,3 +1,5 @@
+import http from "node:http";
+import https from "node:https";
 import { db } from "../src/lib/db";
 import { extractStreamUrl, selectEpisodePayload } from "../src/lib/stream-utils";
 import { clipku } from "../src/services/clipku-api-service";
@@ -17,19 +19,40 @@ async function resolve(provider: string, contentId: string, episode: number) {
   return extractStreamUrl(selectEpisodePayload(raw, provider, episode));
 }
 
-async function mediaResponds(url: string) {
-  const response = await fetch(url, {
-    headers: { Range: "bytes=0-1023" },
-    redirect: "follow",
-    signal: AbortSignal.timeout(20_000),
+async function mediaResponds(url: string, redirects = 0): Promise<boolean> {
+  const target = new URL(url);
+  const client = target.protocol === "https:" ? https : http;
+  const allowInvalidCertificate = target.hostname === "awscdn.netshort.com";
+
+  return new Promise((resolve, reject) => {
+    const request = client.get(target, {
+      headers: { Range: "bytes=0-1023" },
+      rejectUnauthorized: !allowInvalidCertificate,
+      timeout: 20_000,
+    }, (response) => {
+      const location = response.headers.location;
+      if (location && response.statusCode && response.statusCode >= 300 && response.statusCode < 400) {
+        response.resume();
+        if (redirects >= 3) {
+          resolve(false);
+          return;
+        }
+        mediaResponds(new URL(location, target).toString(), redirects + 1).then(resolve, reject);
+        return;
+      }
+
+      const contentType = (response.headers["content-type"] ?? "").toLowerCase();
+      const statusOk = Boolean(response.statusCode && response.statusCode >= 200 && response.statusCode < 300);
+      response.destroy();
+      resolve(statusOk && (
+        contentType.includes("video")
+        || contentType.includes("mpegurl")
+        || contentType.includes("octet-stream")
+      ));
+    });
+    request.on("timeout", () => request.destroy(new Error("Media request timed out")));
+    request.on("error", reject);
   });
-  await response.body?.cancel();
-  const contentType = (response.headers.get("content-type") ?? "").toLowerCase();
-  return response.ok && (
-    contentType.includes("video")
-    || contentType.includes("mpegurl")
-    || contentType.includes("octet-stream")
-  );
 }
 
 async function notify(message: string) {

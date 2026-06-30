@@ -30,6 +30,35 @@ function isPaginated(endpoint: CatalogEndpoint) {
   return Array.isArray(endpoint.queryParamsJson) && endpoint.queryParamsJson.includes("page");
 }
 
+function contentPoster(item: RemoteContent) {
+  const direct = contentText(
+    item,
+    "thumb_url", "thumbUrl", "poster_url", "posterUrl",
+    "cover", "poster", "image", "coverUrl",
+  );
+  if (direct) return browserCompatiblePoster(direct);
+
+  for (const key of ["cover", "poster", "image", "thumbnail"]) {
+    const value = item[key];
+    if (!value || typeof value !== "object" || Array.isArray(value)) continue;
+    const nested = value as RemoteContent;
+    const url = contentText(nested, "url", "src", "original", "large", "thumbnail");
+    if (url) return browserCompatiblePoster(url);
+  }
+}
+
+function browserCompatiblePoster(url: string) {
+  try {
+    const target = new URL(url);
+    if (target.pathname.toLowerCase().endsWith(".heic") || target.hostname === "awscover.netshort.com") {
+      return `https://wsrv.nl/?url=${encodeURIComponent(url)}&output=webp&w=570`;
+    }
+  } catch {
+    return url;
+  }
+  return url;
+}
+
 async function withRetry<T>(operation: () => Promise<T>, attempts = 3): Promise<T> {
   let lastError: unknown;
   for (let attempt = 1; attempt <= attempts; attempt++) {
@@ -157,7 +186,7 @@ export class ContentService {
     for (const [remoteId, item] of unique) {
       try {
         const title = contentTitle(item)!;
-        const poster = contentText(item, "thumb_url", "thumbUrl", "poster_url", "posterUrl", "cover", "poster", "image", "coverUrl");
+        const poster = contentPoster(item) ?? `/provider-logos/${providerSlug}.jpg`;
         const episodeCount = Number(contentText(item, "episode_count", "episodeCount", "episodes_count", "total_episode", "totalEpisodes") ?? 0);
         await db.content.upsert({
           where: { providerSlug_clipkuContentId: { providerSlug, clipkuContentId: remoteId } },

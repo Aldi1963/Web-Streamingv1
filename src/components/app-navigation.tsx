@@ -156,6 +156,27 @@ export function MobileMenu({ loggedIn, role }: { loggedIn: boolean; role?: strin
   </>;
 }
 
+export function BottomNavigation({ loggedIn }: { loggedIn: boolean }) {
+  const pathname = usePathname();
+  const visible: NavItem[] = [items[0], items[1], items[2], items[4]];
+  return <nav className="bottom-nav" aria-label="Navigasi mobile">
+    {visible.map(({ href, label, mobileLabel, Icon }) => <Link
+      key={href}
+      href={href}
+      className={`bottom-nav-item${active(pathname, href, items) ? " active" : ""}`}
+      aria-current={active(pathname, href, items) ? "page" : undefined}
+    >
+      <Icon size={20} /><span>{mobileLabel ?? label}</span>
+    </Link>)}
+    <Link
+      href={loggedIn ? "/dashboard" : "/login"}
+      className={`bottom-nav-item${pathname.startsWith("/dashboard") || pathname === "/login" ? " active" : ""}`}
+    >
+      <User size={20} /><span>Akun</span>
+    </Link>
+  </nav>;
+}
+
 export function SearchForm({ compact = false }: { compact?: boolean }) {
   const params = useSearchParams();
   return (

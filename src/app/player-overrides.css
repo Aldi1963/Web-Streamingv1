@@ -1,0 +1,91 @@
+.watch-fullscreen{
+  width:100vw;
+  height:100dvh;
+  overflow:hidden;
+}
+.watch-video{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+}
+.watch-topbar{
+  padding:max(12px,env(safe-area-inset-top)) max(20px,env(safe-area-inset-right)) 28px max(20px,env(safe-area-inset-left));
+  background:linear-gradient(180deg,#000000e6 0%,#0009 55%,transparent 100%);
+}
+.episode-navigation{
+  left:0;
+  right:0;
+  width:100%;
+  justify-content:space-between;
+  padding:16px 22px;
+  background:transparent;
+  border:0;
+  box-shadow:none;
+  backdrop-filter:none;
+  transform:translateY(-50%);
+  pointer-events:none;
+}
+.episode-navigation.visible{
+  transform:translateY(-50%);
+  pointer-events:none;
+}
+.episode-navigation .episode-control{
+  pointer-events:auto;
+  background:#080a0ecc;
+  border:1px solid #ffffff24;
+  box-shadow:0 8px 26px #0009;
+  backdrop-filter:blur(12px);
+}
+.watch-tools{
+  position:absolute;
+  right:max(18px,env(safe-area-inset-right));
+  bottom:max(78px,calc(env(safe-area-inset-bottom) + 18px));
+  z-index:14;
+}
+.watch-tools .btn{
+  background:#05070bd9;
+  border-color:#ffffff30;
+  box-shadow:0 8px 30px #0009;
+  backdrop-filter:blur(12px);
+}
+.sound-start-button{
+  position:absolute;
+  left:50%;
+  top:50%;
+  z-index:18;
+  display:flex;
+  align-items:center;
+  gap:9px;
+  min-height:50px;
+  padding:0 18px;
+  color:#fff;
+  background:#e50914ed;
+  border:1px solid #ff5962;
+  border-radius:999px;
+  box-shadow:0 12px 38px #000b;
+  font-weight:800;
+  transform:translate(-50%,-50%);
+  cursor:pointer;
+}
+@media(max-width:700px){
+  .watch-topbar{
+    padding:max(10px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) 24px max(12px,env(safe-area-inset-left));
+  }
+  .watch-topbar .btn,.episode-popup-trigger{min-height:44px;padding:9px 13px}
+  .watch-tools{
+    right:max(12px,env(safe-area-inset-right));
+    bottom:max(74px,calc(env(safe-area-inset-bottom) + 16px));
+    padding:0;
+  }
+  .watch-tools .btn{
+    width:44px;
+    height:44px;
+    padding:0;
+    display:grid;
+    place-items:center;
+    border-radius:50%;
+  }
+  .watch-report-label{display:none}
+  .quality-picker{right:12px;bottom:128px}
+}
