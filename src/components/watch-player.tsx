@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Pause, Play, RotateCcw, RotateCw } from "lucide-react";
+import { ChevronLeft, ChevronRight, LoaderCircle, Pause, Play, RotateCcw, RotateCw, Volume2, VolumeX } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { normalizeProgressPosition } from "@/lib/watch-progress";
 
@@ -28,6 +28,9 @@ export function WatchPlayer({
   const resumeApplied = useRef(false);
   const [controlsVisible, setControlsVisible] = useState(true);
   const [playing, setPlaying] = useState(false);
+  const [muted, setMuted] = useState(true);
+  const [buffering, setBuffering] = useState(true);
+  const [playbackError, setPlaybackError] = useState<string | null>(null);
   const [autoplayNotice, setAutoplayNotice] = useState<number | null>(null);
 
   const cancelAutoplay = useCallback((resetNotice = true) => {
@@ -47,6 +50,11 @@ export function WatchPlayer({
   useEffect(() => {
     const video = ref.current;
     if (!video) return;
+    video.setAttribute("referrerpolicy", "no-referrer");
+    video.muted = true;
+    void video.play().catch(() => {
+      // Browser mobile sering menahan autoplay sampai ada interaksi user.
+    });
     let lastSent = 0;
     const save = (force = false) => {
       if (!video.duration) return;
@@ -123,12 +131,33 @@ export function WatchPlayer({
     const video = ref.current;
     if (!video) return;
     if (video.paused) {
-      void video.play();
+      void video.play().catch(() => {
+        // Refresh the media request after a transient CDN/network failure.
+        video.load();
+        void video.play().catch(() => undefined);
+      });
       showControls(true);
     } else {
       video.pause();
       showControls(false);
     }
+  }
+
+  function toggleMuted() {
+    const video = ref.current;
+    if (!video) return;
+    video.muted = !video.muted;
+    setMuted(video.muted);
+    showControls(true);
+  }
+
+  function retryPlayback() {
+    const video = ref.current;
+    if (!video) return;
+    setPlaybackError(null);
+    setBuffering(true);
+    video.load();
+    void video.play().catch(() => setPlaybackError("Video belum dapat diputar. Periksa koneksi lalu coba lagi."));
   }
 
   return (
@@ -138,6 +167,7 @@ export function WatchPlayer({
         src={src}
         controls
         autoPlay
+        muted={muted}
         preload="metadata"
         className="watch-video"
         poster={poster}
@@ -145,6 +175,10 @@ export function WatchPlayer({
         onClick={() => { cancelAutoplay(); showControls(true); }}
         onPlay={() => { setPlaying(true); cancelAutoplay(); showControls(true); }}
         onPause={() => { setPlaying(false); showControls(false); }}
+        onPlaying={() => { setBuffering(false); setPlaybackError(null); }}
+        onWaiting={() => setBuffering(true)}
+        onCanPlay={() => setBuffering(false)}
+        onError={() => { setBuffering(false); setPlaybackError("Video gagal dimuat dari sumber."); }}
       >
         Browser Anda tidak mendukung pemutar video.
       </video>
@@ -168,6 +202,9 @@ export function WatchPlayer({
         <button type="button" className="player-control playback-control" onClick={togglePlayback} aria-label={playing ? "Jeda" : "Putar"}>
           {playing ? <Pause size={28} fill="currentColor" /> : <Play size={28} fill="currentColor" />}
         </button>
+        <button type="button" className="player-control seek-control" onClick={toggleMuted} aria-label={muted ? "Aktifkan suara" : "Matikan suara"}>
+          {muted ? <VolumeX size={21} /> : <Volume2 size={21} />}
+        </button>
         <button type="button" className="player-control seek-control" onClick={() => seek(10)} aria-label="Maju 10 detik">
           <RotateCw size={21} /><span>10</span>
         </button>
@@ -181,6 +218,22 @@ export function WatchPlayer({
           </button>
         )}
       </div>
+      {buffering && !playbackError && (
+        <div className="player-status" role="status" aria-label="Memuat video">
+          <LoaderCircle size={30} className="player-spinner" />
+        </div>
+      )}
+      {playbackError && (
+        <div className="player-status player-status-error" role="alert">
+          <p>{playbackError}</p>
+          <button type="button" className="btn btn-sm" onClick={retryPlayback}>Coba lagi</button>
+        </div>
+      )}
+      {muted && !playbackError && (
+        <button type="button" className="player-unmute" onClick={toggleMuted}>
+          <Volume2 size={17} /> Aktifkan suara
+        </button>
+      )}
       {autoplayNotice && nextHref && (
         <div className="player-toast" role="status" aria-live="polite">
           Episode berikutnya dimulai dalam {autoplayNotice} detik

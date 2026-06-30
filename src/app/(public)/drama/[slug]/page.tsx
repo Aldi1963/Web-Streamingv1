@@ -151,11 +151,14 @@ export async function generateMetadata({
   if (!item) return { title: "Drama tidak ditemukan" };
 
   return {
-    title: `${item.title} — Clipku Streaming`,
+    title: item.title,
     description: item.description?.slice(0, 160) ?? "Tonton drama seru di Clipku Streaming",
+    alternates: { canonical: `/drama/${slug}` },
     openGraph: {
       title: item.title,
       description: item.description?.slice(0, 160),
+      url: `/drama/${slug}`,
+      type: "video.movie" as const,
       images: item.posterUrl ? [item.posterUrl] : [],
     },
   };

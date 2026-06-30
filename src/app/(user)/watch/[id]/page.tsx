@@ -73,6 +73,9 @@ export default async function Watch({
     }
     const episodePayload = selectEpisodePayload(raw, content.providerSlug, epNum);
     streamUrl = extractStreamUrl(episodePayload);
+    if (streamUrl && content.providerSlug === "dramabox") {
+      streamUrl = `/api/video-proxy?bookId=${encodeURIComponent(content.clipkuContentId)}&ep=${epNum}`;
+    }
     if (!streamUrl) streamError = "URL stream tidak tersedia.";
   } catch {
     streamError = "Gagal mengambil URL stream. Coba lagi nanti.";

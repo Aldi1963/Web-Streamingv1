@@ -5,10 +5,22 @@ import { User, Crown } from "lucide-react";
 import { Suspense } from "react";
 import { BottomNavigation, SearchForm, SidebarNavigation } from "@/components/app-navigation";
 import { auth } from "@/services/auth-service";
+import type { Metadata } from "next";
 
-export const metadata = {
-  title: "Clipku Streaming",
+const appUrl = process.env.APP_URL || "https://drama.clipku.com";
+
+export const metadata: Metadata = {
+  metadataBase: new URL(appUrl),
+  title: { default: "Clipku Streaming", template: "%s | Clipku Streaming" },
   description: "Streaming legal dari provider Clipku API",
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    siteName: "Clipku Streaming",
+    locale: "id_ID",
+    url: "/",
+  },
+  robots: { index: true, follow: true },
 };
 
 const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
