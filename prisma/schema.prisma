@@ -242,6 +242,9 @@ model Content {
   @@index([playbackStatus, playbackCheckedAt])
   @@index([providerSlug, language])
   @@index([trendingScore, viewCount])
+  @@index([isActive, lastSyncedAt])
+  @@index([isActive, rating, lastSyncedAt])
+  @@index([providerSlug, isActive, lastSyncedAt])
 }
 
 model Episode {
