@@ -237,8 +237,7 @@ button:disabled{opacity:.6;cursor:not-allowed}
 .watch-fullscreen{position:fixed;inset:0;z-index:999;background:#000;display:flex;align-items:center;justify-content:center}
 .watch-fullscreen ~ .sidebar,
 body:has(.watch-fullscreen) .sidebar,
-body:has(.watch-fullscreen) .mobile-header,
-body:has(.watch-fullscreen) .bottom-nav{display:none!important}
+body:has(.watch-fullscreen) .mobile-header{display:none!important}
 .watch-video{width:100%;height:100%;object-fit:contain;background:#000}
 .player-toast{position:fixed;left:50%;bottom:28px;z-index:1010;transform:translateX(-50%);padding:10px 14px;background:#000c;border:1px solid #ffffff20;border-radius:999px;backdrop-filter:blur(12px);box-shadow:var(--shadow-lg);font-size:.85rem;color:var(--text)}
 .player-status{position:absolute;z-index:11;left:50%;top:50%;display:grid;place-items:center;gap:12px;transform:translate(-50%,-50%);color:white;pointer-events:none}
@@ -306,13 +305,6 @@ body:has(.admin-context) .sidebar>.sidebar-section{display:none}
 @keyframes drawerIn{from{transform:translateX(-100%)}to{transform:translateX(0)}}
 
 /* --- BOTTOM NAV (Mobile) --- */
-.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:50;background:var(--bg2);border-top:1px solid var(--line);padding:6px 8px env(safe-area-inset-bottom,8px);grid-template-columns:repeat(5,1fr)}
-.bottom-nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 4px;color:var(--muted);font-size:0.65rem;font-weight:500;transition:all var(--transition);border-radius:8px}
-.bottom-nav-item:hover{color:var(--text);background:#ffffff08}
-.bottom-nav-item svg{transition:all var(--transition)}
-.bottom-nav-item:hover svg{color:var(--brand)}
-.bottom-nav-item.active{color:white;background:#ffffff08}
-.bottom-nav-item.active svg{color:var(--brand)}
 
 /* --- PROVIDER CHIPS SCROLL --- */
 .provider-chips{display:flex;flex-wrap:nowrap;gap:8px;margin-bottom:24px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
@@ -460,8 +452,6 @@ body:has(.admin-context) .sidebar>.sidebar-section{display:none}
 @media(max-width:768px){
   .sidebar{display:none}
   .mobile-header{display:flex}
-  .bottom-nav{display:grid}
-  .main-content{padding-bottom:70px}
   .featured-slider{height:300px}
   .featured-poster{width:120px}
   .featured-details h2{font-size:1.2rem}

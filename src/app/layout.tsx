@@ -3,7 +3,7 @@ import "./fullscreen.css";
 import Link from "next/link";
 import { User, Crown, Settings, Shield } from "lucide-react";
 import { Suspense } from "react";
-import { BottomNavigation, MobileMenu, SearchForm, SidebarNavigation } from "@/components/app-navigation";
+import { MobileMenu, SearchForm, SidebarNavigation } from "@/components/app-navigation";
 import { auth } from "@/services/auth-service";
 import type { Metadata } from "next";
 
@@ -78,7 +78,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             {children}
 
             {/* Mobile Bottom Nav */}
-            <BottomNavigation loggedIn={Boolean(user)} />
           </main>
         </div>
       </body>
