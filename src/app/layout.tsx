@@ -1,7 +1,7 @@
 import "./globals.css";
 import "./fullscreen.css";
 import Link from "next/link";
-import { User, Crown } from "lucide-react";
+import { User, Crown, Settings, Shield } from "lucide-react";
 import { Suspense } from "react";
 import { BottomNavigation, MobileMenu, SearchForm, SidebarNavigation } from "@/components/app-navigation";
 import { auth } from "@/services/auth-service";
@@ -27,6 +27,7 @@ const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const user = await auth.currentUser();
+  const isAdmin = Boolean(user && ["SUPER_ADMIN", "ADMIN", "CONTENT_MANAGER"].includes(user.role));
   return (
     <html lang="id">
       <body>
@@ -48,6 +49,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </div>
 
             <div className="sidebar-footer">
+              {isAdmin && <Link href="/admin/dashboard" className="sidebar-link" prefetch={false}>
+                <Shield size={20} className="sidebar-icon" /> Control Center
+              </Link>}
+              {isAdmin && <Link href="/admin/settings" className="sidebar-link" prefetch={false}>
+                <Settings size={20} className="sidebar-icon" /> Pengaturan Web
+              </Link>}
               <Link href={user ? "/dashboard" : "/login"} className="sidebar-link" prefetch={false}>
                 <User size={20} className="sidebar-icon" /> {user ? user.name : "Masuk / Daftar"}
               </Link>
@@ -61,7 +68,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <main className="main-content">
             {/* Mobile top bar */}
             <header className="mobile-header">
-              <MobileMenu loggedIn={Boolean(user)} />
+              <MobileMenu loggedIn={Boolean(user)} isAdmin={isAdmin} />
               <Link className="brand" href="/" prefetch={false}>CLIPKU+</Link>
               <Suspense><SearchForm /></Suspense>
               <Link href={user ? "/dashboard" : "/login"} className="btn btn-sm" prefetch={false}>

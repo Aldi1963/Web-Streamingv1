@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { ContentGrid } from "@/components/content-grid";
 import { LogoutButton } from "@/components/logout-button";
+import Link from "next/link";
+import { Settings, Shield, UserRoundCog } from "lucide-react";
 
 export default async function Dashboard() {
   const user = await auth.currentUser();
@@ -30,7 +32,12 @@ export default async function Dashboard() {
           <h1>Halo, {user.name}</h1>
           <p className="muted">{user.email}</p>
         </div>
-        <LogoutButton />
+        <div className="dashboard-actions">
+          {["SUPER_ADMIN", "ADMIN", "CONTENT_MANAGER"].includes(user.role) && <Link className="btn btn-secondary" href="/admin/dashboard"><Shield size={17} /> Control Center</Link>}
+          {["SUPER_ADMIN", "ADMIN"].includes(user.role) && <Link className="btn btn-secondary" href="/admin/settings"><Settings size={17} /> Pengaturan Web</Link>}
+          <Link className="btn btn-secondary" href="/dashboard/profile"><UserRoundCog size={17} /> Pengaturan Akun</Link>
+          <LogoutButton />
+        </div>
       </div>
 
       <div className="stats">

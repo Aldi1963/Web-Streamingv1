@@ -413,6 +413,7 @@ body:has(.watch-fullscreen) .bottom-nav{display:none!important}
 .episode-popup-item.active{background:var(--brand-glow);border-color:#e5091466}
 .dashboard-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:28px}
 .dashboard-heading h1{margin-bottom:4px}
+.dashboard-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px}
 .account-tabs{display:flex;gap:7px;overflow-x:auto;margin:16px 0 22px;padding-bottom:5px}
 .account-tabs a{padding:8px 12px;white-space:nowrap;color:var(--text2);background:var(--panel);border:1px solid var(--line);border-radius:8px;text-transform:capitalize}
 .account-tabs a.active{color:white;background:var(--brand);border-color:var(--brand)}

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Film, Flame, Globe, Home, Menu, Search, Tv, User, X } from "lucide-react";
+import { Film, Flame, Globe, Home, Menu, Search, Settings, Shield, Tv, User, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const items = [
@@ -37,7 +37,7 @@ export function SidebarNavigation() {
   );
 }
 
-export function MobileMenu({ loggedIn }: { loggedIn: boolean }) {
+export function MobileMenu({ loggedIn, isAdmin = false }: { loggedIn: boolean; isAdmin?: boolean }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   useEffect(() => setOpen(false), [pathname]);
@@ -62,6 +62,8 @@ export function MobileMenu({ loggedIn }: { loggedIn: boolean }) {
           </Link>)}
         </nav>
         <div className="mobile-drawer-footer">
+          {isAdmin && <Link href="/admin/dashboard" className="sidebar-link"><Shield size={20} />Control Center</Link>}
+          {isAdmin && <Link href="/admin/settings" className="sidebar-link"><Settings size={20} />Pengaturan web</Link>}
           <Link href={loggedIn ? "/dashboard" : "/login"} className="sidebar-link"><User size={20} />{loggedIn ? "Akun saya" : "Masuk / Daftar"}</Link>
           <Link href="/plans" className="btn">Lihat paket</Link>
         </div>
