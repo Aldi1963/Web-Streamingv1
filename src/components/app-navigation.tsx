@@ -40,13 +40,10 @@ const adminItems = [
   { href: "/admin/providers", label: "Provider", Icon: Globe },
   { href: "/admin/plans", label: "Paket", Icon: Shield },
   { href: "/admin/api-clipku", label: "API Clipku", Icon: Globe },
-  { href: "/admin/api-clipku/sync", label: "Sinkronisasi", Icon: Flame },
-  { href: "/admin/api-clipku/logs", label: "Log API", Icon: Tv },
   { href: "/admin/settings", label: "Pengaturan Web", Icon: Settings },
   { href: "/admin/seo", label: "SEO", Icon: Search },
   { href: "/admin/payment-settings", label: "Pengaturan Pembayaran", Icon: Settings },
-  { href: "/admin/logs", label: "Audit Log", Icon: Shield },
-  { href: "/admin/error-logs", label: "Error Log", Icon: Flame },
+  { href: "/admin/error-logs", label: "Monitoring & Log", Icon: Flame },
 ];
 
 function navigationFor(pathname: string, role?: string) {
@@ -54,7 +51,7 @@ function navigationFor(pathname: string, role?: string) {
     if (role === "CONTENT_MANAGER") {
       return adminItems.filter(item => [
         "/admin/dashboard", "/admin/reports", "/admin/contents", "/admin/providers",
-        "/admin/api-clipku", "/admin/api-clipku/sync", "/admin/api-clipku/logs",
+        "/admin/api-clipku",
       ].includes(item.href));
     }
     return adminItems;

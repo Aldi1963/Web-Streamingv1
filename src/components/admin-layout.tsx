@@ -27,16 +27,13 @@ const groups: AdminGroup[] = [
     ["/admin/providers", "Provider", Database],
   ] },
   { label: "Integrasi", items: [
-    ["/admin/api-clipku", "API Clipku", Database],
-    ["/admin/api-clipku/sync", "Sinkronisasi", Activity],
-    ["/admin/api-clipku/logs", "Log API", FileText],
+    ["/admin/api-clipku", "Integrasi API", Database],
   ] },
   { label: "Sistem", restricted: true, items: [
     ["/admin/settings", "Pengaturan web", Settings],
     ["/admin/seo", "SEO", Settings],
     ["/admin/payment-settings", "Payment gateway", CreditCard],
-    ["/admin/logs", "Audit log", Shield],
-    ["/admin/error-logs", "Error log", Activity],
+    ["/admin/error-logs", "Monitoring & log", Activity],
   ] },
 ];
 
