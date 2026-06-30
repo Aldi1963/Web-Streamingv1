@@ -45,6 +45,14 @@ export function WatchPlayer({
   );
   const [soundBlocked, setSoundBlocked] = useState(false);
 
+  useEffect(() => {
+    const preferred = sources.find(source =>
+      preferredQuality !== "auto" && source.label.toLowerCase().includes(preferredQuality.toLowerCase()),
+    );
+    resumeApplied.current = false;
+    setActiveSrc(preferred?.url ?? src);
+  }, [preferredQuality, sources, src]);
+
   const cancelAutoplay = useCallback((resetNotice = true) => {
     if (autoplayTimer.current) clearTimeout(autoplayTimer.current);
     autoplayTimer.current = null;
@@ -133,7 +141,7 @@ export function WatchPlayer({
       if (hideTimer.current) clearTimeout(hideTimer.current);
       cancelAutoplay(false);
     };
-  }, [autoplay, cancelAutoplay, contentId, defaultMuted, episodeId, nextHref, playbackSpeed, resumeAtSeconds]);
+  }, [activeSrc, autoplay, cancelAutoplay, contentId, defaultMuted, episodeId, nextHref, playbackSpeed, resumeAtSeconds]);
 
   return (
     <>
