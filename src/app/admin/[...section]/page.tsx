@@ -8,6 +8,6 @@ export default async function Admin({params}:{params:Promise<{section:string[]}>
   const section=(await params).section.join("/");
   const title=section==="api-clipku"?"Integrasi API":section==="error-logs"?"Monitoring & Log":section.replaceAll("-"," ");
   return <main className="admin-context"><AdminLayout role={user.role} title={title}>
-    {["settings","payment-settings"].includes(section)?<AdminSettingsForm />:<AdminConsole section={section}/>}
+    {["settings","payment-settings"].includes(section)?<AdminSettingsForm section={section}/>:<AdminConsole section={section}/>}
   </AdminLayout></main>
 }
