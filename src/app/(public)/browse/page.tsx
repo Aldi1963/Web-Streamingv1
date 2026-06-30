@@ -27,7 +27,13 @@ export default async function Browse({ searchParams }: { searchParams: Promise<B
   const orderBy = sort === "rating" ? { rating: "desc" as const } : sort === "title" ? { title: "asc" as const } : { lastSyncedAt: "desc" as const };
 
   const [items, total, providers] = await Promise.all([
-    db.content.findMany({ where, skip: (page - 1) * PER_PAGE, take: PER_PAGE, orderBy }).catch(() => []),
+    db.content.findMany({
+      where,
+      skip: (page - 1) * PER_PAGE,
+      take: PER_PAGE,
+      orderBy,
+      select: { id: true, slug: true, title: true, posterUrl: true, providerName: true, type: true, rating: true },
+    }).catch(() => []),
     db.content.count({ where }).catch(() => 0),
     db.content.groupBy({ by: ["providerName", "providerSlug"], where: { isActive: true }, _count: true }).catch(() => []),
   ]);
@@ -74,7 +80,7 @@ export default async function Browse({ searchParams }: { searchParams: Promise<B
 
     {items.length ? <div className="grid">{items.map(item => (
       <Link href={`/drama/${item.slug}`} className="card" key={item.id} prefetch={false}>
-        <div className="card-poster">{item.posterUrl ? <img src={item.posterUrl} alt={item.title} loading="lazy" /> : <div className="placeholder"><span><Play size={30} /></span></div>}{item.rating && <span className="card-badge-rating"><Star size={10} fill="currentColor" /> {item.rating}</span>}</div>
+        <div className="card-poster">{item.posterUrl ? <img src={item.posterUrl} alt={item.title} loading="lazy" decoding="async" /> : <div className="placeholder"><span><Play size={30} /></span></div>}{item.rating && <span className="card-badge-rating"><Star size={10} fill="currentColor" /> {item.rating}</span>}</div>
         <div className="card-body"><h3>{item.title}</h3><div className="meta">{item.providerName}<span className="dot" />{item.type}</div></div>
       </Link>
     ))}</div> : <div style={{ textAlign: "center", padding: 60, color: "var(--muted)" }}><p style={{ fontSize: "1.2rem" }}>Tidak ada konten.</p>{(q || provider) && <Link href="/browse" className="btn" style={{ marginTop: 16 }}>Reset Filter</Link>}</div>}

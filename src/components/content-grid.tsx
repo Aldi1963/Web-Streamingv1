@@ -46,7 +46,7 @@ export function ContentGrid({
           >
             <div className="card-poster">
               {item.posterUrl ? (
-                <img src={item.posterUrl} alt={item.title} loading="lazy" />
+                <img src={item.posterUrl} alt={item.title} loading="lazy" decoding="async" />
               ) : (
                 <div className="placeholder">
                   <span><Play size={30} /></span>

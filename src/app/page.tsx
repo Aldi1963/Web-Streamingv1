@@ -26,45 +26,62 @@ const providerLogos: Record<string, string> = {
   dramawave: "/provider-logos/dramawave.jpg",
 };
 
+const cardSelect = {
+  id: true,
+  slug: true,
+  title: true,
+  posterUrl: true,
+  providerName: true,
+  type: true,
+  rating: true,
+} as const;
+
 export default async function Home({ searchParams }: HomeProps) {
-  const requestedProvider = (await searchParams).provider?.trim();
-  const user = await auth.currentUser();
-  const providers = await db.content.groupBy({
-    by: ["providerName", "providerSlug"],
-    where: { isActive: true },
-    _count: true,
-    orderBy: { _count: { providerSlug: "desc" } },
-  }).catch(() => []);
+  const [params, user, providers] = await Promise.all([
+    searchParams,
+    auth.currentUser(),
+    db.content.groupBy({
+      by: ["providerName", "providerSlug"],
+      where: { isActive: true },
+      _count: true,
+      orderBy: { _count: { providerSlug: "desc" } },
+    }).catch(() => []),
+  ]);
+  const requestedProvider = params.provider?.trim();
   const activeProvider = providers.find(provider => provider.providerSlug === requestedProvider);
   const contentWhere = {
     isActive: true,
     ...(activeProvider ? { providerSlug: activeProvider.providerSlug } : {}),
   };
 
-  const featured = await db.content.findMany({
-    where: { ...contentWhere, posterUrl: { not: null } },
-    select: {
-      id: true, slug: true, title: true, description: true, posterUrl: true,
-      bannerUrl: true, providerName: true, rating: true, type: true, releaseYear: true,
-    },
-    take: 6,
-    orderBy: [{ rating: "desc" }, { lastSyncedAt: "desc" }],
-  }).catch(() => []);
-
-  const latest = await db.content.findMany({
-    where: contentWhere,
-    take: 18,
-    orderBy: { lastSyncedAt: "desc" },
-  }).catch(() => []);
-
-  const popular = await db.content.findMany({
-    where: contentWhere,
-    take: 18,
-    orderBy: [{ rating: "desc" }, { lastSyncedAt: "desc" }],
-  }).catch(() => []);
-  const savedIds = user ? new Set((await db.watchlist.findMany({
-    where: { userId: user.id }, select: { contentId: true },
-  }).catch(() => [])).map(item => item.contentId)) : new Set<string>();
+  const [featured, latest, popular, saved] = await Promise.all([
+    db.content.findMany({
+      where: { ...contentWhere, posterUrl: { not: null } },
+      select: {
+        id: true, slug: true, title: true, description: true, posterUrl: true,
+        bannerUrl: true, providerName: true, rating: true, type: true, releaseYear: true,
+      },
+      take: 6,
+      orderBy: [{ rating: "desc" }, { lastSyncedAt: "desc" }],
+    }).catch(() => []),
+    db.content.findMany({
+      where: contentWhere,
+      select: cardSelect,
+      take: 18,
+      orderBy: { lastSyncedAt: "desc" },
+    }).catch(() => []),
+    db.content.findMany({
+      where: contentWhere,
+      select: cardSelect,
+      take: 18,
+      orderBy: [{ rating: "desc" }, { lastSyncedAt: "desc" }],
+    }).catch(() => []),
+    user ? db.watchlist.findMany({
+      where: { userId: user.id },
+      select: { contentId: true },
+    }).catch(() => []) : Promise.resolve([]),
+  ]);
+  const savedIds = new Set(saved.map(item => item.contentId));
 
   return (
     <>
@@ -104,6 +121,7 @@ export default async function Home({ searchParams }: HomeProps) {
                     width={42}
                     height={42}
                     loading="lazy"
+                    decoding="async"
                   />
                 ) : provider.providerName.charAt(0).toUpperCase()}
               </span>
@@ -133,7 +151,7 @@ export default async function Home({ searchParams }: HomeProps) {
           {latest.map(item => (
             <Link href={`/drama/${item.slug}`} className="card" key={item.id} prefetch={false}>
               <div className="card-poster">
-                {item.posterUrl ? <img src={item.posterUrl} alt={item.title} loading="lazy" /> : <div className="placeholder"><span><Play size={30} /></span></div>}
+                {item.posterUrl ? <img src={item.posterUrl} alt={item.title} loading="lazy" decoding="async" /> : <div className="placeholder"><span><Play size={30} /></span></div>}
                 {item.rating && <span className="card-badge-rating"><Star size={10} fill="currentColor" /> {item.rating}</span>}
               </div>
               <div className="card-body">
@@ -151,7 +169,7 @@ export default async function Home({ searchParams }: HomeProps) {
           {popular.map(item => (
             <Link href={`/drama/${item.slug}`} className="card" key={item.id} prefetch={false}>
               <div className="card-poster">
-                {item.posterUrl ? <img src={item.posterUrl} alt={item.title} loading="lazy" /> : <div className="placeholder"><span><Play size={30} /></span></div>}
+                {item.posterUrl ? <img src={item.posterUrl} alt={item.title} loading="lazy" decoding="async" /> : <div className="placeholder"><span><Play size={30} /></span></div>}
                 {item.rating && <span className="card-badge-rating"><Star size={10} fill="currentColor" /> {item.rating}</span>}
               </div>
               <div className="card-body">

@@ -40,10 +40,10 @@ export function ProviderHeroSlider({ items, providerName, loggedIn, savedIds }: 
     <section className="featured-slider" aria-label={`Drama populer ${providerName ?? "semua provider"}`}>
       {items.map((item, index) => (
         <article className={`featured-slide${index === active ? " active" : ""}`} key={item.id} aria-hidden={index !== active}>
-          {(item.bannerUrl || item.posterUrl) && <img src={item.bannerUrl || item.posterUrl || ""} alt="" className="featured-bg" />}
+          {(item.bannerUrl || item.posterUrl) && <img src={item.bannerUrl || item.posterUrl || ""} alt="" className="featured-bg" loading={index === 0 ? "eager" : "lazy"} fetchPriority={index === 0 ? "high" : "low"} decoding="async" />}
           <div className="featured-overlay" />
           <div className="featured-info">
-            <div className="featured-poster">{item.posterUrl && <img src={item.posterUrl} alt={item.title} />}</div>
+            <div className="featured-poster">{item.posterUrl && <img src={item.posterUrl} alt={item.title} loading={index === 0 ? "eager" : "lazy"} fetchPriority={index === 0 ? "high" : "low"} decoding="async" />}</div>
             <div className="featured-details">
               <span className="featured-provider">Drama Populer · {item.providerName}</span>
               <h2>{item.title}</h2>
