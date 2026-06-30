@@ -266,6 +266,13 @@ body:has(.watch-fullscreen) .bottom-nav{display:none!important}
 .sidebar{width:240px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--line);padding:20px;display:flex;flex-direction:column;gap:16px;position:sticky;top:0;height:100vh;overflow-y:auto;z-index:50}
 .sidebar .brand{font-size:1.3rem;padding:4px 0}
 .sidebar-nav{display:flex;flex-direction:column;gap:2px}
+.sidebar-group{display:grid;gap:2px}
+.sidebar-group+.sidebar-group{margin-top:7px}
+.sidebar-group summary,.sidebar-group-label{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;color:var(--muted);font-size:.7rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;list-style:none}
+.sidebar-group summary::-webkit-details-marker{display:none}
+.sidebar-group summary::after{content:"›";font-size:1rem;transition:transform .18s ease}
+.sidebar-group[open] summary::after{transform:rotate(90deg)}
+.sidebar-group-links{display:grid;gap:2px;padding-left:5px;border-left:1px solid var(--line)}
 .sidebar-link{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-sm);color:var(--text2);font-size:0.9rem;font-weight:500;transition:all var(--transition)}
 .sidebar-link:hover{background:var(--panel);color:white}
 .sidebar-link.active{background:var(--panel2);color:white;box-shadow:inset 3px 0 var(--brand)}

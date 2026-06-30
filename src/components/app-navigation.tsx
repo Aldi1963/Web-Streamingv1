@@ -4,6 +4,9 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Film, Flame, Globe, Home, Menu, Search, Settings, Shield, Tv, User, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import type { LucideIcon } from "lucide-react";
+
+type NavItem = { href: string; label: string; Icon: LucideIcon; mobileLabel?: string };
 
 const items = [
   { href: "/", label: "Home", Icon: Home },
@@ -60,7 +63,7 @@ function navigationFor(pathname: string, role?: string) {
   return items;
 }
 
-function active(pathname: string, href: string, navigation: typeof items) {
+function active(pathname: string, href: string, navigation: NavItem[]) {
   const matched = navigation
     .filter(item => pathname === item.href || (item.href !== "/" && pathname.startsWith(`${item.href}/`)))
     .sort((a, b) => b.href.length - a.href.length)[0]?.href;
@@ -69,22 +72,54 @@ function active(pathname: string, href: string, navigation: typeof items) {
   return false;
 }
 
+function groupName(pathname: string, href: string) {
+  if (pathname.startsWith("/dashboard")) {
+    if (href === "/dashboard") return "Ringkasan";
+    if (/\/(profile|security|preferences|devices)$/.test(href)) return "Akun & keamanan";
+    if (/\/(subscription|payments|invoices)$/.test(href)) return "Langganan & tagihan";
+    return "Koleksi saya";
+  }
+  if (pathname.startsWith("/admin")) {
+    if (href === "/admin/dashboard") return "Ringkasan";
+    if (/\/(users|devices)$/.test(href)) return "Pengguna & akses";
+    if (/\/(subscriptions|payments|plans)$/.test(href)) return "Monetisasi";
+    if (/\/(contents|providers|reports)$/.test(href)) return "Konten";
+    if (href.includes("/api-clipku")) return "Integrasi API";
+    if (/\/(settings|seo|payment-settings)$/.test(href)) return "Konfigurasi";
+    return "Monitoring";
+  }
+  return "Navigasi";
+}
+
+function NavigationLinks({ pathname, navigation }: { pathname: string; navigation: NavItem[] }) {
+  const groups = navigation.reduce<Record<string, NavItem[]>>((result, item) => {
+    const name = groupName(pathname, item.href);
+    (result[name] ||= []).push(item);
+    return result;
+  }, {});
+  const grouped = pathname.startsWith("/dashboard") || pathname.startsWith("/admin");
+  return <>{Object.entries(groups).map(([name, group]) => {
+    const containsActive = group.some(item => active(pathname, item.href, navigation));
+    const links = group.map(({ href, label, Icon }) => <Link
+      key={href}
+      href={href}
+      className={`sidebar-link${active(pathname, href, navigation) ? " active" : ""}`}
+      aria-current={active(pathname, href, navigation) ? "page" : undefined}
+    ><Icon size={20} className="sidebar-icon" />{label}</Link>);
+    if (!grouped || name === "Ringkasan") return <div className="sidebar-group" key={name}>{grouped && <span className="sidebar-group-label">{name}</span>}{links}</div>;
+    return <details className="sidebar-group" key={name} open={containsActive}>
+      <summary>{name}</summary>
+      <div className="sidebar-group-links">{links}</div>
+    </details>;
+  })}</>;
+}
+
 export function SidebarNavigation({ role }: { role?: string }) {
   const pathname = usePathname();
   const navigation = navigationFor(pathname, role);
   return (
     <nav className="sidebar-nav" aria-label="Navigasi utama">
-      {navigation.map(({ href, label, Icon }) => (
-        <Link
-          key={href}
-          href={href}
-          className={`sidebar-link${active(pathname, href, navigation) ? " active" : ""}`}
-          aria-current={active(pathname, href, navigation) ? "page" : undefined}
-        >
-          <Icon size={20} className="sidebar-icon" />
-          {label}
-        </Link>
-      ))}
+      <NavigationLinks pathname={pathname} navigation={navigation} />
     </nav>
   );
 }
@@ -111,9 +146,7 @@ export function MobileMenu({ loggedIn, role }: { loggedIn: boolean; role?: strin
           <button type="button" className="mobile-menu-trigger" aria-label="Tutup menu" onClick={() => setOpen(false)}><X size={23} /></button>
         </div>
         <nav className="sidebar-nav">
-          {navigation.map(({ href, label, Icon }) => <Link key={href} href={href} className={`sidebar-link${active(pathname, href, navigation) ? " active" : ""}`}>
-            <Icon size={20} className="sidebar-icon" />{label}
-          </Link>)}
+          <NavigationLinks pathname={pathname} navigation={navigation} />
         </nav>
         <div className="mobile-drawer-footer">
           {isAdmin && <Link href="/admin/dashboard" className="sidebar-link"><Shield size={20} />Control Center</Link>}
