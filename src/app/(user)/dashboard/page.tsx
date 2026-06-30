@@ -5,12 +5,13 @@ import { ContentGrid } from "@/components/content-grid";
 import { LogoutButton } from "@/components/logout-button";
 import Link from "next/link";
 import { Settings, Shield, UserRoundCog } from "lucide-react";
+import { WatchProgressGrid } from "@/components/watch-progress-grid";
 
 export default async function Dashboard() {
   const user = await auth.currentUser();
   if (!user) redirect("/login");
 
-  const [subscription, watchlist, devices] = await Promise.all([
+  const [subscription, watchlist, devices, progress] = await Promise.all([
     db.subscription.findFirst({
       where: { userId: user.id, status: "ACTIVE", expiresAt: { gt: new Date() } },
       include: { plan: true },
@@ -22,6 +23,12 @@ export default async function Dashboard() {
       orderBy: { createdAt: "desc" },
     }),
     db.deviceSession.count({ where: { userId: user.id, expiresAt: { gt: new Date() } } }),
+    db.watchProgress.findMany({
+      where: { userId: user.id, durationSeconds: { gt: 0 } },
+      include: { content: { include: { episodes: { select: { id: true, episodeNumber: true } } } } },
+      orderBy: { lastWatchedAt: "desc" },
+      take: 6,
+    }),
   ]);
 
   return (
@@ -54,6 +61,14 @@ export default async function Dashboard() {
           <strong>{devices || 1}</strong>
         </div>
       </div>
+
+      <WatchProgressGrid
+        title="Lanjut menonton"
+        items={progress}
+        emptyLabel="Belum ada tontonan"
+        emptyText="Drama yang mulai ditonton akan muncul di sini."
+        showResumeButton
+      />
 
       {watchlist.length ? (
         <ContentGrid title="Watchlist saya" items={watchlist.map((item) => item.content)} />

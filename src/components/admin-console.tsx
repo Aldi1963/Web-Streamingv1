@@ -1,56 +1,71 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 
+type Action = { type: string; id: string; value: boolean | string; label: string; detail?: boolean };
+
 export function AdminConsole({ section }: { section: string }) {
   const [data, setData] = useState<any>(null);
   const [query, setQuery] = useState("");
   const [message, setMessage] = useState("");
+  const [page, setPage] = useState(1);
+  const [action, setAction] = useState<Action | null>(null);
+  const [busy, setBusy] = useState(false);
   const load = () => fetch(`/api/admin/overview?section=${encodeURIComponent(section)}`)
-    .then(async r => { const x = await r.json(); if (!r.ok) throw new Error(x.message); setData(x); })
-    .catch(e => setMessage(e.message));
-  useEffect(() => { void load(); }, [section]);
-  const rows = useMemo(() => (data?.rows || []).filter((row: any) =>
-    JSON.stringify(row).toLowerCase().includes(query.toLowerCase())), [data, query]);
-  async function toggle(type: string, id: string, value: boolean | string, detail?: string) {
-    if (!confirm("Terapkan perubahan ini?")) return;
-    const r = await fetch("/api/admin/overview", { method: "PATCH", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type, id, value, detail }) });
-    const x = await r.json(); setMessage(x.message); if (r.ok) load();
+    .then(async response => { const result = await response.json(); if (!response.ok) throw new Error(result.message); setData(result); })
+    .catch(error => setMessage(error.message));
+  useEffect(() => { setPage(1); void load(); }, [section]);
+  const rows = useMemo(() => (data?.rows || []).filter((row: any) => JSON.stringify(row).toLowerCase().includes(query.toLowerCase())), [data, query]);
+  const visibleRows = rows.slice((page - 1) * 20, page * 20);
+  const pages = Math.max(1, Math.ceil(rows.length / 20));
+
+  async function execute(detail?: string) {
+    if (!action) return;
+    setBusy(true);
+    const response = await fetch("/api/admin/overview", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...action, detail }) });
+    const result = await response.json();
+    setBusy(false); setMessage(result.message);
+    if (response.ok) { setAction(null); void load(); }
   }
-  function syncSummary(row: any) {
-    try {
-      const detail = JSON.parse(row.message || "{}");
-      const seconds = row.finishedAt ? Math.max(0, Math.round((new Date(row.finishedAt).getTime() - new Date(row.startedAt).getTime()) / 1000)) : 0;
-      return `${detail.inserted || 0} baru · ${detail.updated || 0} diperbarui · ${row.failedCount} gagal · ${seconds} detik`;
-    } catch {
-      return `${row.successCount}/${row.totalData} berhasil`;
-    }
-  }
-  if (!data) return <div className="panel admin-empty">{message || "Memuat data..."}</div>;
-  const s = data.stats;
+  const ask = (type: string, id: string, value: boolean | string, label: string, detail = false) => setAction({ type, id, value, label, detail });
+  const display = (key: string, value: any) => {
+    if (value == null) return "-";
+    if (typeof value === "boolean") return <span className={`status-badge ${value ? "success" : "danger"}`}>{value ? "Aktif" : "Nonaktif"}</span>;
+    if (key === "status" || key === "role") return <span className={`status-badge status-${String(value).toLowerCase()}`}>{String(value)}</span>;
+    if (typeof value === "object") return Object.values(value).map(String).join(" · ").slice(0, 100);
+    if (/At$/.test(key) && !Number.isNaN(Date.parse(String(value)))) return new Date(value).toLocaleString("id-ID");
+    return String(value);
+  };
+  if (!data) return <div className="panel admin-empty">{message || <span className="skeleton-line">Memuat data…</span>}</div>;
+  const stats = data.stats;
   return <div className="admin-console">
     <div className="admin-stats">
-      <div className="panel">User<strong>{s.users}</strong></div><div className="panel">Konten<strong>{s.contents}</strong></div>
-      <div className="panel">Langganan aktif<strong>{s.activeSubscriptions}</strong></div><div className="panel">Transaksi<strong>{s.payments}</strong></div>
-      <div className="panel">Endpoint<strong>{s.endpoints}</strong></div><div className="panel">Sync bermasalah<strong>{s.failedSyncs}</strong></div>
+      {[["User",stats.users],["Konten",stats.contents],["Langganan aktif",stats.activeSubscriptions],["Transaksi",stats.payments],["Endpoint",stats.endpoints],["Sync bermasalah",stats.failedSyncs]].map(([label,value]) => <div className="panel" key={String(label)}>{label}<strong>{value}</strong></div>)}
     </div>
     {data.rows && <section className="panel admin-data">
-      <div className="admin-toolbar"><input placeholder="Cari data…" value={query} onChange={e => setQuery(e.target.value)} /><span>{rows.length} data</span></div>
-      {!rows.length ? <p className="muted">Belum ada data.</p> : <div className="admin-table-wrap"><table><thead><tr>
-        {Object.keys(rows[0]).filter(k => !["id","_count"].includes(k)).map(k => <th key={k}>{k}</th>)}<th>Aksi</th>
-      </tr></thead><tbody>{rows.map((row: any) => <tr key={row.id}>
-        {Object.entries(row).filter(([k]) => !["id","_count"].includes(k)).map(([k,v]) => <td key={k}>{typeof v === "object" ? JSON.stringify(v) : typeof v === "boolean" ? (v ? "Aktif" : "Nonaktif") : String(v ?? "-")}</td>)}
-        <td>{row.isActive !== undefined && <button onClick={() => toggle("content-active",row.id,!row.isActive)}>{row.isActive ? "Nonaktifkan" : "Aktifkan"}</button>}
-        {row.isFeatured !== undefined && <button onClick={() => toggle("content-featured",row.id,!row.isFeatured)}>{row.isFeatured ? "Unfeature" : "Feature"}</button>}
-        {row.email && <button onClick={() => toggle("logout-devices",row.id,true)}>Logout perangkat</button>}
-        {row.isSuspended !== undefined && <button onClick={() => toggle("user-suspended",row.id,!row.isSuspended)}>{row.isSuspended ? "Aktifkan" : "Suspend"}</button>}
-        {row.role && <select value={row.role} onChange={e => toggle("user-role",row.id,e.target.value)}><option>USER</option><option>SUBSCRIBER</option><option>CONTENT_MANAGER</option><option>ADMIN</option></select>}
-        {row.status && row.startsAt && row.status !== "CANCELLED" && <button onClick={() => toggle("subscription-cancel",row.id,true)}>Batalkan</button>}
-        {row.category && row.status !== "RESOLVED" && <button onClick={() => toggle("report-resolve",row.id,true,prompt("Catatan penyelesaian") || undefined)}>Selesaikan</button>}
-        {row.invoiceNumber && row.status !== "PAID" && <button onClick={() => toggle("payment-paid",row.id,true)}>Tandai lunas</button>}</td>
+      <div className="admin-toolbar"><input aria-label="Cari data" placeholder="Cari data…" value={query} onChange={event => { setQuery(event.target.value); setPage(1); }} /><span>{rows.length} data</span></div>
+      {!rows.length ? <p className="muted">Belum ada data yang cocok.</p> : <div className="admin-table-wrap"><table><thead><tr>
+        {Object.keys(rows[0]).filter(key => !["id","_count"].includes(key)).map(key => <th key={key}>{key}</th>)}<th>Aksi</th>
+      </tr></thead><tbody>{visibleRows.map((row: any) => <tr key={row.id}>
+        {Object.entries(row).filter(([key]) => !["id","_count"].includes(key)).map(([key,value]) => <td key={key}>{display(key,value)}</td>)}
+        <td className="admin-actions">
+          {row.isActive !== undefined && <button onClick={() => ask("content-active",row.id,!row.isActive,row.isActive?"Nonaktifkan konten":"Aktifkan konten")}>{row.isActive?"Nonaktifkan":"Aktifkan"}</button>}
+          {row.isFeatured !== undefined && <button onClick={() => ask("content-featured",row.id,!row.isFeatured,row.isFeatured?"Hapus dari unggulan":"Jadikan unggulan")}>{row.isFeatured?"Unfeature":"Feature"}</button>}
+          {row.email && <button onClick={() => ask("logout-devices",row.id,true,"Logout seluruh perangkat")}>Logout perangkat</button>}
+          {row.isSuspended !== undefined && <button className={!row.isSuspended?"danger":""} onClick={() => ask("user-suspended",row.id,!row.isSuspended,row.isSuspended?"Aktifkan akun":"Suspend akun")}>{row.isSuspended?"Aktifkan":"Suspend"}</button>}
+          {row.role && <select aria-label="Ubah role" value={row.role} onChange={event => ask("user-role",row.id,event.target.value,`Ubah role ke ${event.target.value}`)}><option>USER</option><option>SUBSCRIBER</option><option>CONTENT_MANAGER</option><option>ADMIN</option></select>}
+          {row.startsAt && row.status !== "CANCELLED" && <button className="danger" onClick={() => ask("subscription-cancel",row.id,true,"Batalkan langganan")}>Batalkan</button>}
+          {row.category && row.status !== "RESOLVED" && <button onClick={() => ask("report-resolve",row.id,true,"Selesaikan laporan",true)}>Selesaikan</button>}
+          {row.invoiceNumber && row.status !== "PAID" && <button onClick={() => ask("payment-paid",row.id,true,"Tandai pembayaran lunas")}>Tandai lunas</button>}
+        </td>
       </tr>)}</tbody></table></div>}
+      {pages > 1 && <div className="table-pagination"><button disabled={page === 1} onClick={() => setPage(value => value - 1)}>Sebelumnya</button><span>{page} / {pages}</span><button disabled={page === pages} onClick={() => setPage(value => value + 1)}>Berikutnya</button></div>}
     </section>}
-    {data.recentSyncs && <section className="panel admin-data"><h2>Sinkronisasi terbaru</h2>{data.recentSyncs.map((x:any)=><p key={x.id}><strong>{x.providerName}</strong> · {x.status} · {syncSummary(x)}</p>)}</section>}
-    {message && <div className="admin-toast">{message}</div>}
+    {data.recentSyncs && <section className="panel admin-data"><h2>Sinkronisasi terbaru</h2>{data.recentSyncs.map((item:any)=><p key={item.id}><strong>{item.providerName}</strong> · <span className={`status-badge status-${item.status.toLowerCase()}`}>{item.status}</span> · {item.successCount}/{item.totalData} berhasil</p>)}</section>}
+    {message && <div className="admin-toast" role="status">{message}<button aria-label="Tutup notifikasi" onClick={() => setMessage("")}>×</button></div>}
+    {action && <div className="dialog-overlay" onClick={() => setAction(null)}><form className="dialog-card" role="dialog" aria-modal="true" onSubmit={event => { event.preventDefault(); const form = new FormData(event.currentTarget); void execute(String(form.get("detail") || "")); }} onClick={event => event.stopPropagation()}>
+      <h2>Konfirmasi tindakan</h2><p>Anda akan <strong>{action.label}</strong>. Tindakan ini dicatat dalam audit log.</p>
+      {action.detail && <label>Catatan<textarea name="detail" required maxLength={1000} rows={4} /></label>}
+      <div className="dialog-actions"><button type="button" className="btn btn-secondary" onClick={() => setAction(null)}>Batal</button><button className="btn" disabled={busy}>{busy?"Memproses…":"Konfirmasi"}</button></div>
+    </form></div>}
   </div>;
 }

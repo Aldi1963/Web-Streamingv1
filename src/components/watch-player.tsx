@@ -32,6 +32,8 @@ export function WatchPlayer({
   const [buffering, setBuffering] = useState(true);
   const [playbackError, setPlaybackError] = useState<string | null>(null);
   const [reportMessage, setReportMessage] = useState("");
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reporting, setReporting] = useState(false);
   const [autoplayNotice, setAutoplayNotice] = useState<number | null>(null);
 
   const cancelAutoplay = useCallback((resetNotice = true) => {
@@ -161,15 +163,19 @@ export function WatchPlayer({
     void video.play().catch(() => setPlaybackError("Video belum dapat diputar. Periksa koneksi lalu coba lagi."));
   }
 
-  async function reportPlayback() {
-    const detail = prompt("Jelaskan masalah video (opsional)") || undefined;
+  async function reportPlayback(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    setReporting(true);
     const response = await fetch("/api/me/reports", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contentId, episodeId, category: "VIDEO_ERROR", detail }),
+      body: JSON.stringify({ contentId, episodeId, category: form.get("category"), detail: form.get("detail") || undefined }),
     });
     const result = await response.json();
+    setReporting(false);
     setReportMessage(result.message || "Laporan diproses.");
+    if (response.ok) setReportOpen(false);
     setTimeout(() => setReportMessage(""), 4000);
   }
 
@@ -247,7 +253,15 @@ export function WatchPlayer({
           <Volume2 size={17} /> Aktifkan suara
         </button>
       )}
-      <button type="button" className="player-report" onClick={reportPlayback}>Laporkan video</button>
+      <button type="button" className="player-report" onClick={() => setReportOpen(true)}>Laporkan video</button>
+      {reportOpen && <div className="dialog-overlay" role="presentation" onClick={() => setReportOpen(false)}>
+        <form className="dialog-card" role="dialog" aria-modal="true" aria-labelledby="report-title" onSubmit={reportPlayback} onClick={event => event.stopPropagation()}>
+          <h2 id="report-title">Laporkan masalah video</h2>
+          <label>Jenis masalah<select name="category" required><option value="VIDEO_ERROR">Video tidak dapat diputar</option><option value="AUDIO">Masalah audio</option><option value="SUBTITLE">Masalah subtitle</option><option value="WRONG_EPISODE">Episode tidak sesuai</option><option value="OTHER">Lainnya</option></select></label>
+          <label>Detail<textarea name="detail" maxLength={1000} rows={4} placeholder="Jelaskan masalah yang terjadi…" /></label>
+          <div className="dialog-actions"><button type="button" className="btn btn-secondary" onClick={() => setReportOpen(false)}>Batal</button><button className="btn" disabled={reporting}>{reporting ? "Mengirim…" : "Kirim laporan"}</button></div>
+        </form>
+      </div>}
       {reportMessage && <div className="player-toast" role="status">{reportMessage}</div>}
       {autoplayNotice && nextHref && (
         <div className="player-toast" role="status" aria-live="polite">
