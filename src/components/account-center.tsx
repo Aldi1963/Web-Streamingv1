@@ -11,8 +11,6 @@ type Account = {
   preferences?: { autoplay: boolean; defaultMuted: boolean; playbackSpeed: number; preferredQuality: string; emailNotifications: boolean } | null;
 };
 
-const navigation = ["profile", "subscription", "payments", "invoices", "devices", "history", "favorites", "watchlist", "preferences", "security"];
-
 export function AccountCenter({ section }: { section: string }) {
   const [account, setAccount] = useState<Account | null>(null);
   const [library, setLibrary] = useState<any[]>([]);
@@ -45,7 +43,6 @@ export function AccountCenter({ section }: { section: string }) {
   return <main className="shell dashboard dashboard-context">
     <p className="eyebrow">Akun saya</p>
     <h1>{section.replace("-", " ")}</h1>
-    <nav className="account-tabs">{navigation.map(item => <Link key={item} className={item === section ? "active" : ""} href={`/dashboard/${item}`}>{item}</Link>)}</nav>
     {message && <div className="panel account-message">{message}</div>}
 
     {section === "profile" && <form className="panel account-form" onSubmit={async (event: FormEvent<HTMLFormElement>) => {

@@ -277,7 +277,9 @@ body:has(.watch-fullscreen) .bottom-nav{display:none!important}
 .sidebar-year:hover{background:var(--brand);color:white}
 .sidebar-footer{margin-top:auto;display:flex;flex-direction:column;gap:8px}
 body:has(.dashboard-context) .sidebar>.search-sidebar,
-body:has(.dashboard-context) .sidebar>.sidebar-section{display:none}
+body:has(.dashboard-context) .sidebar>.sidebar-section,
+body:has(.admin-context) .sidebar>.search-sidebar,
+body:has(.admin-context) .sidebar>.sidebar-section{display:none}
 .search-sidebar{margin:0}
 .search-sidebar .search-input{width:100%}
 .main-content{flex:1;min-width:0}
@@ -416,9 +418,6 @@ body:has(.dashboard-context) .sidebar>.sidebar-section{display:none}
 .dashboard-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:28px}
 .dashboard-heading h1{margin-bottom:4px}
 .dashboard-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px}
-.account-tabs{display:flex;gap:7px;overflow-x:auto;margin:16px 0 22px;padding-bottom:5px}
-.account-tabs a{padding:8px 12px;white-space:nowrap;color:var(--text2);background:var(--panel);border:1px solid var(--line);border-radius:8px;text-transform:capitalize}
-.account-tabs a.active{color:white;background:var(--brand);border-color:var(--brand)}
 .account-form{display:grid;gap:15px;max-width:680px}
 .account-form label{display:grid;gap:6px;color:var(--text2)}
 .account-form input:not([type=checkbox]),.account-form select{width:100%;padding:11px 12px;color:var(--text);background:var(--bg2);border:1px solid var(--line2);border-radius:8px}
@@ -476,7 +475,7 @@ body:has(.dashboard-context) .sidebar>.sidebar-section{display:none}
   .featured-actions .wl-btn{padding:8px 14px;font-size:0.8rem}
   .drama-banner{height:200px}.drama-detail{margin-top:-40px}.drama-poster{width:140px}.episode-grid{grid-template-columns:1fr}
   .stats{grid-template-columns:1fr}
-  .admin-stats{grid-template-columns:repeat(2,1fr)}.admin{display:block}.admin .shell{padding:18px}.admin-sidebar{display:flex;position:sticky;width:100%;height:auto;top:0;z-index:60;flex-direction:row;align-items:center;padding:10px;overflow-x:auto;gap:4px}.admin-sidebar h2{font-size:1rem;white-space:nowrap;margin:0 8px}.admin-sidebar a{flex:0 0 auto;white-space:nowrap}
+  .admin-stats{grid-template-columns:repeat(2,1fr)}.admin{display:block}.admin .shell{padding:18px}
   .filter-bar select{flex:1;min-width:130px}
 }
 @media(max-width:480px){

@@ -26,22 +26,60 @@ const dashboardItems = [
   { href: "/dashboard/security", label: "Keamanan", Icon: Shield },
 ];
 
-function active(pathname: string, href: string) {
-  if (href === "/" || href === "/dashboard") return pathname === href;
-  return pathname.startsWith(href);
+const adminItems = [
+  { href: "/admin/dashboard", label: "Dashboard Admin", Icon: Home },
+  { href: "/admin/users", label: "Pengguna", Icon: User },
+  { href: "/admin/subscriptions", label: "Langganan", Icon: Shield },
+  { href: "/admin/payments", label: "Pembayaran", Icon: Film },
+  { href: "/admin/devices", label: "Perangkat", Icon: Tv },
+  { href: "/admin/reports", label: "Laporan Video", Icon: Flame },
+  { href: "/admin/contents", label: "Konten", Icon: Film },
+  { href: "/admin/providers", label: "Provider", Icon: Globe },
+  { href: "/admin/plans", label: "Paket", Icon: Shield },
+  { href: "/admin/api-clipku", label: "API Clipku", Icon: Globe },
+  { href: "/admin/api-clipku/sync", label: "Sinkronisasi", Icon: Flame },
+  { href: "/admin/api-clipku/logs", label: "Log API", Icon: Tv },
+  { href: "/admin/settings", label: "Pengaturan Web", Icon: Settings },
+  { href: "/admin/seo", label: "SEO", Icon: Search },
+  { href: "/admin/payment-settings", label: "Pengaturan Pembayaran", Icon: Settings },
+  { href: "/admin/logs", label: "Audit Log", Icon: Shield },
+  { href: "/admin/error-logs", label: "Error Log", Icon: Flame },
+];
+
+function navigationFor(pathname: string, role?: string) {
+  if (pathname.startsWith("/admin")) {
+    if (role === "CONTENT_MANAGER") {
+      return adminItems.filter(item => [
+        "/admin/dashboard", "/admin/reports", "/admin/contents", "/admin/providers",
+        "/admin/api-clipku", "/admin/api-clipku/sync", "/admin/api-clipku/logs",
+      ].includes(item.href));
+    }
+    return adminItems;
+  }
+  if (pathname.startsWith("/dashboard")) return dashboardItems;
+  return items;
 }
 
-export function SidebarNavigation() {
+function active(pathname: string, href: string, navigation: typeof items) {
+  const matched = navigation
+    .filter(item => pathname === item.href || (item.href !== "/" && pathname.startsWith(`${item.href}/`)))
+    .sort((a, b) => b.href.length - a.href.length)[0]?.href;
+  if (matched) return matched === href;
+  if (href === "/" || href === "/dashboard") return pathname === href;
+  return false;
+}
+
+export function SidebarNavigation({ role }: { role?: string }) {
   const pathname = usePathname();
-  const navigation = pathname.startsWith("/dashboard") ? dashboardItems : items;
+  const navigation = navigationFor(pathname, role);
   return (
     <nav className="sidebar-nav" aria-label="Navigasi utama">
       {navigation.map(({ href, label, Icon }) => (
         <Link
           key={href}
           href={href}
-          className={`sidebar-link${active(pathname, href) ? " active" : ""}`}
-          aria-current={active(pathname, href) ? "page" : undefined}
+          className={`sidebar-link${active(pathname, href, navigation) ? " active" : ""}`}
+          aria-current={active(pathname, href, navigation) ? "page" : undefined}
         >
           <Icon size={20} className="sidebar-icon" />
           {label}
@@ -51,9 +89,10 @@ export function SidebarNavigation() {
   );
 }
 
-export function MobileMenu({ loggedIn, isAdmin = false }: { loggedIn: boolean; isAdmin?: boolean }) {
+export function MobileMenu({ loggedIn, role }: { loggedIn: boolean; role?: string }) {
   const pathname = usePathname();
-  const navigation = pathname.startsWith("/dashboard") ? dashboardItems : items;
+  const isAdmin = ["SUPER_ADMIN", "ADMIN", "CONTENT_MANAGER"].includes(role || "");
+  const navigation = navigationFor(pathname, role);
   const [open, setOpen] = useState(false);
   useEffect(() => setOpen(false), [pathname]);
   useEffect(() => {
@@ -72,7 +111,7 @@ export function MobileMenu({ loggedIn, isAdmin = false }: { loggedIn: boolean; i
           <button type="button" className="mobile-menu-trigger" aria-label="Tutup menu" onClick={() => setOpen(false)}><X size={23} /></button>
         </div>
         <nav className="sidebar-nav">
-          {navigation.map(({ href, label, Icon }) => <Link key={href} href={href} className={`sidebar-link${active(pathname, href) ? " active" : ""}`}>
+          {navigation.map(({ href, label, Icon }) => <Link key={href} href={href} className={`sidebar-link${active(pathname, href, navigation) ? " active" : ""}`}>
             <Icon size={20} className="sidebar-icon" />{label}
           </Link>)}
         </nav>
@@ -96,8 +135,8 @@ export function BottomNavigation({ loggedIn }: { loggedIn: boolean }) {
         <Link
           key={href}
           href={href}
-          className={`bottom-nav-item${active(pathname, href) ? " active" : ""}`}
-          aria-current={active(pathname, href) ? "page" : undefined}
+          className={`bottom-nav-item${active(pathname, href, visible) ? " active" : ""}`}
+          aria-current={active(pathname, href, visible) ? "page" : undefined}
         >
           <Icon size={20} /><span>{mobileLabel ?? label}</span>
         </Link>

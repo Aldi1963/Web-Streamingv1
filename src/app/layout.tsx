@@ -37,7 +37,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <Link className="brand" href="/" prefetch={false}>CLIPKU+</Link>
 
             <Suspense><SearchForm compact /></Suspense>
-            <SidebarNavigation />
+            <SidebarNavigation role={user?.role} />
 
             <div className="sidebar-section">
               <span className="sidebar-label">Tahun</span>
@@ -68,7 +68,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <main className="main-content">
             {/* Mobile top bar */}
             <header className="mobile-header">
-              <MobileMenu loggedIn={Boolean(user)} isAdmin={isAdmin} />
+              <MobileMenu loggedIn={Boolean(user)} role={user?.role} />
               <Link className="brand" href="/" prefetch={false}>CLIPKU+</Link>
               <Suspense><SearchForm /></Suspense>
               <Link href={user ? "/dashboard" : "/login"} className="btn btn-sm" prefetch={false}>
