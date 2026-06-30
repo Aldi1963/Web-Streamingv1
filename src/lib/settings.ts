@@ -3,6 +3,10 @@ import { createCipheriv, createDecipheriv, createHash, randomBytes } from "crypt
 import { db } from "@/lib/db";
 
 export const settingDefinitions = {
+  SITE_NAME: { sensitive: false, fallback: "Clipku Streaming" },
+  SITE_DESCRIPTION: { sensitive: false, fallback: "Streaming drama pilihan di Clipku" },
+  SEO_DEFAULT_IMAGE: { sensitive: false },
+  SEO_INDEXING: { sensitive: false, fallback: "enabled" },
   PAYMENT_PROVIDER: { sensitive: false, fallback: "pakasir" },
   PAKASIR_API_KEY: { sensitive: true },
   PAKASIR_SLUG: { sensitive: false },

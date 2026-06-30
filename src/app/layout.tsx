@@ -6,22 +6,14 @@ import { Suspense } from "react";
 import { MobileMenu, SearchForm, SidebarNavigation } from "@/components/app-navigation";
 import { auth } from "@/services/auth-service";
 import type { Metadata } from "next";
+import { getSetting } from "@/lib/settings";
 
 const appUrl = process.env.APP_URL || "https://drama.clipku.com";
 
-export const metadata: Metadata = {
-  metadataBase: new URL(appUrl),
-  title: { default: "Clipku Streaming", template: "%s | Clipku Streaming" },
-  description: "Streaming legal dari provider Clipku API",
-  alternates: { canonical: "/" },
-  openGraph: {
-    type: "website",
-    siteName: "Clipku Streaming",
-    locale: "id_ID",
-    url: "/",
-  },
-  robots: { index: true, follow: true },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const [name,description,image,indexing]=await Promise.all([getSetting("SITE_NAME"),getSetting("SITE_DESCRIPTION"),getSetting("SEO_DEFAULT_IMAGE"),getSetting("SEO_INDEXING")]);
+  return {metadataBase:new URL(appUrl),title:{default:name||"Clipku Streaming",template:`%s | ${name||"Clipku Streaming"}`},description,alternates:{canonical:"/"},openGraph:{type:"website",siteName:name,locale:"id_ID",url:"/",images:image?[image]:[]},robots:{index:indexing!=="disabled",follow:indexing!=="disabled"}};
+}
 
 const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
 

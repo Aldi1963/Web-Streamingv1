@@ -1,0 +1,4 @@
+import { NextResponse } from "next/server";
+import { auth } from "@/services/auth-service";
+import { db } from "@/lib/db";
+export async function GET(){const user=await auth.currentUser();if(!user||!["SUPER_ADMIN","ADMIN","CONTENT_MANAGER"].includes(user.role))return NextResponse.json({message:"Forbidden"},{status:403});const groups=await db.content.groupBy({by:["providerSlug","providerName"],_count:{_all:true},_sum:{viewCount:true},_max:{lastSyncedAt:true}});const failed=await db.content.groupBy({by:["providerSlug"],where:{playbackStatus:"FAILED"},_count:{_all:true}});const failedMap=new Map(failed.map(item=>[item.providerSlug,item._count._all]));return NextResponse.json(groups.map(item=>({slug:item.providerSlug,name:item.providerName,contents:item._count._all,views:item._sum.viewCount||0,failed:failedMap.get(item.providerSlug)||0,lastSyncedAt:item._max.lastSyncedAt})).sort((a,b)=>b.contents-a.contents))}
