@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { verifyPakasirPayment } from "@/services/pakasir-service";
 import { apiError } from "@/lib/http";
+import { activatePayment } from "@/services/payment-activation-service";
 
 const webhook = z.object({
   amount: z.number().positive(),
@@ -39,28 +40,11 @@ export async function POST(request: Request) {
     const plan = await db.plan.findUnique({ where: { id: payment.planId } });
     if (!plan) return NextResponse.json({ message: "Paket transaksi tidak ditemukan." }, { status: 422 });
 
-    const now = new Date();
-    await db.$transaction(async (tx) => {
-      const claimed = await tx.payment.updateMany({
-        where: { id: payment.id, status: "PENDING" },
-        data: {
-          status: "PAID",
-          paidAt: verified.completed_at ? new Date(verified.completed_at) : now,
-          verifiedAt: now,
-          providerReference: verified.payment_method,
-          payload: { webhook: event, verified },
-        },
-      });
-      if (!claimed.count) return; // Webhook retry: already activated.
-      await tx.subscription.create({
-        data: {
-          userId: payment.userId,
-          planId: plan.id,
-          status: "ACTIVE",
-          startsAt: now,
-          expiresAt: new Date(now.getTime() + plan.durationDays * 86_400_000),
-        },
-      });
+    await activatePayment(payment.id, {
+      paidAt: verified.completed_at ? new Date(verified.completed_at) : new Date(),
+      verifiedAt: new Date(),
+      providerReference: verified.payment_method,
+      payload: { webhook: event, verified },
     });
     return NextResponse.json({ ok: true });
   } catch (error) {

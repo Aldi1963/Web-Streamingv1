@@ -55,7 +55,7 @@ export function AdminConsole({ section }: { section: string }) {
           {row.role && <select aria-label="Ubah role" value={row.role} onChange={event => ask("user-role",row.id,event.target.value,`Ubah role ke ${event.target.value}`)}><option>USER</option><option>SUBSCRIBER</option><option>CONTENT_MANAGER</option><option>ADMIN</option></select>}
           {row.startsAt && row.status !== "CANCELLED" && <button className="danger" onClick={() => ask("subscription-cancel",row.id,true,"Batalkan langganan")}>Batalkan</button>}
           {row.category && row.status !== "RESOLVED" && <button onClick={() => ask("report-resolve",row.id,true,"Selesaikan laporan",true)}>Selesaikan</button>}
-          {row.invoiceNumber && row.status !== "PAID" && <button onClick={() => ask("payment-paid",row.id,true,"Tandai pembayaran lunas")}>Tandai lunas</button>}
+          {row.invoiceNumber && row.status !== "PAID" && <button onClick={() => ask("payment-paid",row.id,true,"Tandai pembayaran lunas",true)}>Tandai lunas</button>}
         </td>
       </tr>)}</tbody></table></div>}
       {pages > 1 && <div className="table-pagination"><button disabled={page === 1} onClick={() => setPage(value => value - 1)}>Sebelumnya</button><span>{page} / {pages}</span><button disabled={page === pages} onClick={() => setPage(value => value + 1)}>Berikutnya</button></div>}

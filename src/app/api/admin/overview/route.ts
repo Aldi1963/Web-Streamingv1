@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/services/auth-service";
 import { db } from "@/lib/db";
+import { activatePayment } from "@/services/payment-activation-service";
 
 async function permitted() {
   const user = await auth.currentUser();
@@ -118,8 +119,9 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ message: "Laporan diselesaikan.", result });
   }
   if (body.type === "payment-paid") {
-    const result = await db.payment.update({where:{id:body.id},data:{status:"PAID",paidAt:new Date()}});
-    await db.adminAuditLog.create({data:{adminId:user.id,action:"PAYMENT_MARK_PAID",entityType:"Payment",entityId:body.id}});
+    const reason = body.detail?.trim();
+    if (!reason || reason.length < 8) return NextResponse.json({message:"Alasan aktivasi manual minimal 8 karakter."},{status:422});
+    const result = await activatePayment(body.id,{admin:{id:user.id,reason}});
     return NextResponse.json({message:"Pembayaran ditandai lunas.",result});
   }
   return NextResponse.json({ message: "Aksi tidak dikenal." }, { status: 400 });
