@@ -40,6 +40,7 @@ export function AdminSettingsForm({ section = "settings" }: { section?: string }
   const [visible, setVisible] = useState<Set<string>>(new Set());
   const [state, setState] = useState<"loading"|"idle"|"saving"|"saved"|"error">("loading");
   const [message, setMessage] = useState("");
+  const [testing, setTesting] = useState(false);
 
   useEffect(() => {
     fetch("/api/admin/settings").then(async response => {
@@ -59,6 +60,11 @@ export function AdminSettingsForm({ section = "settings" }: { section?: string }
     const next = Object.fromEntries(data.settings.map((item: Setting) => [item.key, item.value]));
     setSettings(data.settings); setValues(next); setInitial(next); setMessage(data.message); setState("saved");
   }
+  async function testConfiguration(target: "email"|"security"|"payment") {
+    setTesting(true); setMessage("");
+    const response = await fetch("/api/admin/settings/test",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({target})});
+    const data = await response.json(); setMessage(data.message); setTesting(false); setState(response.ok?"saved":"error");
+  }
 
   if (state === "loading") return <div className="settings-loading"><div className="skeleton skeleton-title"/><div className="skeleton settings-skeleton"/></div>;
   return <form className="settings-page" onSubmit={submit}>
@@ -73,6 +79,6 @@ export function AdminSettingsForm({ section = "settings" }: { section?: string }
         </label>;
       })}</div>
     </section>)}
-    <div className="settings-savebar"><div>{message || (dirty ? "Ada perubahan yang belum disimpan." : "Semua perubahan telah tersimpan.")}</div><button className="btn" disabled={!dirty || state === "saving"}><Save size={17}/>{state === "saving" ? "Menyimpan…" : "Simpan perubahan"}</button></div>
+    <div className="settings-savebar"><div>{message || (dirty ? "Ada perubahan yang belum disimpan." : "Semua perubahan telah tersimpan.")}</div><div className="settings-save-actions">{section==="payment-settings"?<button type="button" className="btn btn-secondary" disabled={dirty||testing} onClick={()=>testConfiguration("payment")}>{testing?"Menguji…":"Uji payment"}</button>:<><button type="button" className="btn btn-secondary" disabled={dirty||testing} onClick={()=>testConfiguration("email")}>Uji SMTP</button><button type="button" className="btn btn-secondary" disabled={dirty||testing} onClick={()=>testConfiguration("security")}>Uji Turnstile</button></>}<button className="btn" disabled={!dirty || state === "saving"}><Save size={17}/>{state === "saving" ? "Menyimpan…" : "Simpan perubahan"}</button></div></div>
   </form>;
 }
