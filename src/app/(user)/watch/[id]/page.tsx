@@ -31,9 +31,10 @@ export default async function Watch({
   const episodes = episodesWithFallback(content.episodes, content.apiRawResponse, content.id);
   const currentIndex = episodes.findIndex(ep => ep.episodeNumber === epNum);
   const currentEpisode = currentIndex >= 0 ? episodes[currentIndex] : undefined;
+  const currentStoredEpisode = content.episodes.find(episode => episode.episodeNumber === epNum);
   const previousEpisode = currentIndex > 0 ? episodes[currentIndex - 1] : undefined;
   const nextEpisode = currentIndex >= 0 ? episodes[currentIndex + 1] : undefined;
-  const progressRows = await db.watchProgress.findMany({
+  const [progressRows, preferences] = await Promise.all([db.watchProgress.findMany({
     where: { userId: user.id, contentId: content.id },
     select: {
       episodeId: true,
@@ -42,7 +43,7 @@ export default async function Watch({
       lastWatchedAt: true,
     },
     orderBy: { lastWatchedAt: "desc" },
-  }).catch(() => []);
+  }).catch(() => []), db.userPreference.findUnique({ where: { userId: user.id } }).catch(() => null)]);
   const progress = currentEpisode
     ? progressRows.find(row => row.episodeId === currentEpisode.id) ?? null
     : null;
@@ -115,6 +116,10 @@ export default async function Watch({
           previousHref={previousEpisode ? `/watch/${content.id}?ep=${previousEpisode.episodeNumber}` : undefined}
           nextHref={nextEpisode ? `/watch/${content.id}?ep=${nextEpisode.episodeNumber}` : undefined}
           resumeAtSeconds={resumeAtSeconds}
+          autoplay={preferences?.autoplay ?? true}
+          defaultMuted={preferences?.defaultMuted ?? true}
+          playbackSpeed={preferences?.playbackSpeed ?? 1}
+          subtitleUrl={currentStoredEpisode?.subtitleUrl ?? content.subtitleUrl ?? undefined}
         />
       )}
 

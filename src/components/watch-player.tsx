@@ -13,6 +13,10 @@ export function WatchPlayer({
   previousHref,
   nextHref,
   resumeAtSeconds = 0,
+  autoplay = true,
+  defaultMuted = true,
+  playbackSpeed = 1,
+  subtitleUrl,
 }: {
   src: string;
   poster?: string;
@@ -21,6 +25,10 @@ export function WatchPlayer({
   previousHref?: string;
   nextHref?: string;
   resumeAtSeconds?: number;
+  autoplay?: boolean;
+  defaultMuted?: boolean;
+  playbackSpeed?: number;
+  subtitleUrl?: string;
 }) {
   const ref = useRef<HTMLVideoElement>(null);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -28,7 +36,7 @@ export function WatchPlayer({
   const resumeApplied = useRef(false);
   const [controlsVisible, setControlsVisible] = useState(true);
   const [playing, setPlaying] = useState(false);
-  const [muted, setMuted] = useState(true);
+  const [muted, setMuted] = useState(defaultMuted);
   const [buffering, setBuffering] = useState(true);
   const [playbackError, setPlaybackError] = useState<string | null>(null);
   const [reportMessage, setReportMessage] = useState("");
@@ -54,8 +62,9 @@ export function WatchPlayer({
     const video = ref.current;
     if (!video) return;
     video.setAttribute("referrerpolicy", "no-referrer");
-    video.muted = true;
-    void video.play().catch(() => {
+    video.muted = defaultMuted;
+    video.playbackRate = Math.min(2, Math.max(.5, playbackSpeed));
+    if (autoplay) void video.play().catch(() => {
       // Browser mobile sering menahan autoplay sampai ada interaksi user.
     });
     let lastSent = 0;
@@ -82,7 +91,7 @@ export function WatchPlayer({
     video.addEventListener("pause", handlePause);
     const next = () => {
       save(true);
-      if (!nextHref) return;
+      if (!nextHref || !autoplay) return;
       cancelAutoplay();
       setAutoplayNotice(3);
       setControlsVisible(true);
@@ -120,7 +129,7 @@ export function WatchPlayer({
       if (hideTimer.current) clearTimeout(hideTimer.current);
       cancelAutoplay(false);
     };
-  }, [cancelAutoplay, contentId, episodeId, nextHref, resumeAtSeconds]);
+  }, [autoplay, cancelAutoplay, contentId, defaultMuted, episodeId, nextHref, playbackSpeed, resumeAtSeconds]);
 
   function seek(seconds: number) {
     const video = ref.current;
@@ -185,7 +194,7 @@ export function WatchPlayer({
         ref={ref}
         src={src}
         controls
-        autoPlay
+        autoPlay={autoplay}
         muted={muted}
         preload="metadata"
         className="watch-video"
@@ -199,6 +208,7 @@ export function WatchPlayer({
         onCanPlay={() => setBuffering(false)}
         onError={() => { setBuffering(false); setPlaybackError("Video gagal dimuat dari sumber."); }}
       >
+        {subtitleUrl && <track kind="subtitles" src={subtitleUrl} srcLang="id" label="Indonesia" default />}
         Browser Anda tidak mendukung pemutar video.
       </video>
       <div
