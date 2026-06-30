@@ -25,7 +25,7 @@ export default async function Dashboard() {
   ]);
 
   return (
-    <main className="shell dashboard">
+    <main className="shell dashboard dashboard-context">
       <div className="dashboard-heading">
         <div>
           <p className="eyebrow">Akun saya</p>

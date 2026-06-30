@@ -276,6 +276,8 @@ body:has(.watch-fullscreen) .bottom-nav{display:none!important}
 .sidebar-year{padding:4px 10px;border-radius:6px;font-size:0.78rem;color:var(--muted);background:var(--panel);transition:all var(--transition)}
 .sidebar-year:hover{background:var(--brand);color:white}
 .sidebar-footer{margin-top:auto;display:flex;flex-direction:column;gap:8px}
+body:has(.dashboard-context) .sidebar>.search-sidebar,
+body:has(.dashboard-context) .sidebar>.sidebar-section{display:none}
 .search-sidebar{margin:0}
 .search-sidebar .search-input{width:100%}
 .main-content{flex:1;min-width:0}

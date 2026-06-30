@@ -14,15 +14,29 @@ const items = [
   { href: "/drakor", label: "Drakor", Icon: Globe },
 ];
 
+const dashboardItems = [
+  { href: "/dashboard", label: "Ringkasan", Icon: Home },
+  { href: "/dashboard/profile", label: "Profil", Icon: User },
+  { href: "/dashboard/subscription", label: "Langganan", Icon: Shield },
+  { href: "/dashboard/payments", label: "Pembayaran", Icon: Film },
+  { href: "/dashboard/devices", label: "Perangkat", Icon: Tv },
+  { href: "/dashboard/history", label: "Riwayat", Icon: Flame },
+  { href: "/dashboard/favorites", label: "Favorit", Icon: Globe },
+  { href: "/dashboard/preferences", label: "Preferensi", Icon: Settings },
+  { href: "/dashboard/security", label: "Keamanan", Icon: Shield },
+];
+
 function active(pathname: string, href: string) {
-  return href === "/" ? pathname === "/" : pathname.startsWith(href);
+  if (href === "/" || href === "/dashboard") return pathname === href;
+  return pathname.startsWith(href);
 }
 
 export function SidebarNavigation() {
   const pathname = usePathname();
+  const navigation = pathname.startsWith("/dashboard") ? dashboardItems : items;
   return (
     <nav className="sidebar-nav" aria-label="Navigasi utama">
-      {items.map(({ href, label, Icon }) => (
+      {navigation.map(({ href, label, Icon }) => (
         <Link
           key={href}
           href={href}
@@ -39,6 +53,7 @@ export function SidebarNavigation() {
 
 export function MobileMenu({ loggedIn, isAdmin = false }: { loggedIn: boolean; isAdmin?: boolean }) {
   const pathname = usePathname();
+  const navigation = pathname.startsWith("/dashboard") ? dashboardItems : items;
   const [open, setOpen] = useState(false);
   useEffect(() => setOpen(false), [pathname]);
   useEffect(() => {
@@ -57,7 +72,7 @@ export function MobileMenu({ loggedIn, isAdmin = false }: { loggedIn: boolean; i
           <button type="button" className="mobile-menu-trigger" aria-label="Tutup menu" onClick={() => setOpen(false)}><X size={23} /></button>
         </div>
         <nav className="sidebar-nav">
-          {items.map(({ href, label, Icon }) => <Link key={href} href={href} className={`sidebar-link${active(pathname, href) ? " active" : ""}`}>
+          {navigation.map(({ href, label, Icon }) => <Link key={href} href={href} className={`sidebar-link${active(pathname, href) ? " active" : ""}`}>
             <Icon size={20} className="sidebar-icon" />{label}
           </Link>)}
         </nav>

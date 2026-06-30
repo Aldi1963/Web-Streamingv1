@@ -39,10 +39,10 @@ export function AccountCenter({ section }: { section: string }) {
     return response.ok;
   }
 
-  if (!account) return <main className="shell"><div className="panel">{message || "Memuat akun…"}</div></main>;
+  if (!account) return <main className="shell dashboard-context"><div className="panel">{message || "Memuat akun…"}</div></main>;
   const money = (value: string) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(Number(value));
 
-  return <main className="shell dashboard">
+  return <main className="shell dashboard dashboard-context">
     <p className="eyebrow">Akun saya</p>
     <h1>{section.replace("-", " ")}</h1>
     <nav className="account-tabs">{navigation.map(item => <Link key={item} className={item === section ? "active" : ""} href={`/dashboard/${item}`}>{item}</Link>)}</nav>
