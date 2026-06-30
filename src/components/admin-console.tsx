@@ -11,10 +11,10 @@ export function AdminConsole({ section }: { section: string }) {
   useEffect(() => { void load(); }, [section]);
   const rows = useMemo(() => (data?.rows || []).filter((row: any) =>
     JSON.stringify(row).toLowerCase().includes(query.toLowerCase())), [data, query]);
-  async function toggle(type: string, id: string, value: boolean) {
+  async function toggle(type: string, id: string, value: boolean | string, detail?: string) {
     if (!confirm("Terapkan perubahan ini?")) return;
     const r = await fetch("/api/admin/overview", { method: "PATCH", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type, id, value }) });
+      body: JSON.stringify({ type, id, value, detail }) });
     const x = await r.json(); setMessage(x.message); if (r.ok) load();
   }
   function syncSummary(row: any) {
@@ -43,6 +43,10 @@ export function AdminConsole({ section }: { section: string }) {
         <td>{row.isActive !== undefined && <button onClick={() => toggle("content-active",row.id,!row.isActive)}>{row.isActive ? "Nonaktifkan" : "Aktifkan"}</button>}
         {row.isFeatured !== undefined && <button onClick={() => toggle("content-featured",row.id,!row.isFeatured)}>{row.isFeatured ? "Unfeature" : "Feature"}</button>}
         {row.email && <button onClick={() => toggle("logout-devices",row.id,true)}>Logout perangkat</button>}
+        {row.isSuspended !== undefined && <button onClick={() => toggle("user-suspended",row.id,!row.isSuspended)}>{row.isSuspended ? "Aktifkan" : "Suspend"}</button>}
+        {row.role && <select value={row.role} onChange={e => toggle("user-role",row.id,e.target.value)}><option>USER</option><option>SUBSCRIBER</option><option>CONTENT_MANAGER</option><option>ADMIN</option></select>}
+        {row.status && row.startsAt && row.status !== "CANCELLED" && <button onClick={() => toggle("subscription-cancel",row.id,true)}>Batalkan</button>}
+        {row.category && row.status !== "RESOLVED" && <button onClick={() => toggle("report-resolve",row.id,true,prompt("Catatan penyelesaian") || undefined)}>Selesaikan</button>}
         {row.invoiceNumber && row.status !== "PAID" && <button onClick={() => toggle("payment-paid",row.id,true)}>Tandai lunas</button>}</td>
       </tr>)}</tbody></table></div>}
     </section>}

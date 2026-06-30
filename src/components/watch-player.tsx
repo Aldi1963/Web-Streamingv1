@@ -31,6 +31,7 @@ export function WatchPlayer({
   const [muted, setMuted] = useState(true);
   const [buffering, setBuffering] = useState(true);
   const [playbackError, setPlaybackError] = useState<string | null>(null);
+  const [reportMessage, setReportMessage] = useState("");
   const [autoplayNotice, setAutoplayNotice] = useState<number | null>(null);
 
   const cancelAutoplay = useCallback((resetNotice = true) => {
@@ -160,6 +161,18 @@ export function WatchPlayer({
     void video.play().catch(() => setPlaybackError("Video belum dapat diputar. Periksa koneksi lalu coba lagi."));
   }
 
+  async function reportPlayback() {
+    const detail = prompt("Jelaskan masalah video (opsional)") || undefined;
+    const response = await fetch("/api/me/reports", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contentId, episodeId, category: "VIDEO_ERROR", detail }),
+    });
+    const result = await response.json();
+    setReportMessage(result.message || "Laporan diproses.");
+    setTimeout(() => setReportMessage(""), 4000);
+  }
+
   return (
     <>
       <video
@@ -234,6 +247,8 @@ export function WatchPlayer({
           <Volume2 size={17} /> Aktifkan suara
         </button>
       )}
+      <button type="button" className="player-report" onClick={reportPlayback}>Laporkan video</button>
+      {reportMessage && <div className="player-toast" role="status">{reportMessage}</div>}
       {autoplayNotice && nextHref && (
         <div className="player-toast" role="status" aria-live="polite">
           Episode berikutnya dimulai dalam {autoplayNotice} detik

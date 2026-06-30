@@ -37,6 +37,8 @@ model User {
   email String @unique
   passwordHash String
   role Role @default(USER)
+  isSuspended Boolean @default(false)
+  suspendedAt DateTime?
   emailVerifiedAt DateTime?
   rememberToken String?
   createdAt DateTime @default(now())
@@ -48,6 +50,8 @@ model User {
   watchlist Watchlist[]
   favorites Favorite[]
   reviews Review[]
+  preferences UserPreference?
+  playbackReports PlaybackReport[]
 }
 
 model DeviceSession {
@@ -322,4 +326,32 @@ model AdminAuditLog {
   detail Json?
   createdAt DateTime @default(now())
   @@index([adminId, createdAt])
+}
+
+model UserPreference {
+  id String @id @default(cuid())
+  userId String @unique
+  autoplay Boolean @default(true)
+  defaultMuted Boolean @default(true)
+  playbackSpeed Float @default(1)
+  preferredQuality String @default("auto")
+  emailNotifications Boolean @default(true)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  updatedAt DateTime @updatedAt
+}
+
+model PlaybackReport {
+  id String @id @default(cuid())
+  userId String
+  contentId String
+  episodeId String?
+  category String
+  detail String? @db.Text
+  status String @default("OPEN")
+  resolution String? @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([status, createdAt])
+  @@index([contentId, episodeId])
 }

@@ -16,7 +16,10 @@ export async function POST(request: Request) {
 
   try {
     const input = loginSchema.parse(await request.json());
-    const result = await auth.login(input.email, input.password);
+    const result = await auth.login(input.email, input.password, {
+      userAgent: request.headers.get("user-agent"),
+      ip: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || request.headers.get("x-real-ip"),
+    });
     return NextResponse.json(result);
   } catch (e) {
     return apiError(e, { route: "login" });

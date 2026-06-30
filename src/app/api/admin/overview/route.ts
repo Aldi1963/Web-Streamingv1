@@ -21,10 +21,29 @@ export async function GET(request: NextRequest) {
     if (user.role === "CONTENT_MANAGER") return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     return NextResponse.json({ stats, rows: await db.user.findMany({
       take: 100, orderBy: { createdAt: "desc" },
-      select: { id: true, name: true, email: true, role: true, emailVerifiedAt: true, createdAt: true,
+      select: { id: true, name: true, email: true, role: true, isSuspended: true, emailVerifiedAt: true, createdAt: true,
         _count: { select: { sessions: true, subscriptions: true } } },
     }) });
   }
+  if (section === "subscriptions") {
+    if (user.role === "CONTENT_MANAGER") return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    return NextResponse.json({ stats, rows: await db.subscription.findMany({
+      take: 100, orderBy: { expiresAt: "desc" },
+      select: { id: true, status: true, startsAt: true, expiresAt: true, user: { select: { email: true } }, plan: { select: { name: true } } },
+    }) });
+  }
+  if (section === "devices") {
+    if (user.role === "CONTENT_MANAGER") return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    return NextResponse.json({ stats, rows: await db.deviceSession.findMany({
+      take: 100, orderBy: { lastActiveAt: "desc" },
+      select: { id: true, deviceName: true, browser: true, ip: true, lastActiveAt: true, expiresAt: true, user: { select: { email: true } } },
+    }) });
+  }
+  if (section === "reports") return NextResponse.json({ stats, rows: await db.playbackReport.findMany({
+    take: 100, orderBy: { createdAt: "desc" },
+    select: { id: true, contentId: true, episodeId: true, category: true, detail: true, status: true, resolution: true, createdAt: true,
+      user: { select: { email: true } } },
+  }) });
   if (["payments", "invoices"].includes(section)) {
     if (user.role === "CONTENT_MANAGER") return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     return NextResponse.json({ stats, rows: await db.payment.findMany({
@@ -50,7 +69,7 @@ export async function GET(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   const user = await permitted();
   if (!user) return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-  const body = await request.json() as { type?: string; id?: string; value?: boolean };
+  const body = await request.json() as { type?: string; id?: string; value?: boolean | string; detail?: string };
   if (!body.id) return NextResponse.json({ message: "ID wajib." }, { status: 400 });
   if (body.type === "content-active") {
     const result = await db.content.update({ where: { id: body.id }, data: { isActive: Boolean(body.value) } });
@@ -59,6 +78,7 @@ export async function PATCH(request: NextRequest) {
   }
   if (body.type === "content-featured") {
     const result = await db.content.update({ where: { id: body.id }, data: { isFeatured: Boolean(body.value) } });
+    await db.adminAuditLog.create({data:{adminId:user.id,action:"CONTENT_FEATURED",entityType:"Content",entityId:body.id,detail:{value:body.value}}});
     return NextResponse.json({ message: "Featured diperbarui.", result });
   }
   if (user.role === "CONTENT_MANAGER") return NextResponse.json({ message: "Forbidden" }, { status: 403 });
@@ -66,6 +86,36 @@ export async function PATCH(request: NextRequest) {
     const result = await db.deviceSession.deleteMany({ where: { userId: body.id } });
     await db.adminAuditLog.create({data:{adminId:user.id,action:"LOGOUT_DEVICES",entityType:"User",entityId:body.id,detail:{count:result.count}}});
     return NextResponse.json({ message: `${result.count} sesi perangkat dihapus.` });
+  }
+  if (body.type === "user-suspended") {
+    if (body.id === user.id) return NextResponse.json({ message: "Tidak dapat menonaktifkan akun sendiri." }, { status: 422 });
+    const suspended = Boolean(body.value);
+    const result = await db.$transaction([
+      db.user.update({ where: { id: body.id }, data: { isSuspended: suspended, suspendedAt: suspended ? new Date() : null } }),
+      ...(suspended ? [db.deviceSession.deleteMany({ where: { userId: body.id } })] : []),
+      db.adminAuditLog.create({data:{adminId:user.id,action:suspended?"USER_SUSPEND":"USER_RESTORE",entityType:"User",entityId:body.id}}),
+    ]);
+    return NextResponse.json({ message: suspended ? "Akun dinonaktifkan." : "Akun diaktifkan.", result });
+  }
+  if (body.type === "user-role") {
+    if (user.role !== "SUPER_ADMIN") return NextResponse.json({ message: "Hanya SUPER_ADMIN dapat mengubah role." }, { status: 403 });
+    const role = String(body.value);
+    if (!["USER","SUBSCRIBER","CONTENT_MANAGER","ADMIN"].includes(role) || body.id === user.id) {
+      return NextResponse.json({ message: "Perubahan role tidak valid." }, { status: 422 });
+    }
+    const result = await db.user.update({ where: { id: body.id }, data: { role: role as "USER"|"SUBSCRIBER"|"CONTENT_MANAGER"|"ADMIN" } });
+    await db.adminAuditLog.create({data:{adminId:user.id,action:"USER_ROLE",entityType:"User",entityId:body.id,detail:{role}}});
+    return NextResponse.json({ message: "Role diperbarui.", result });
+  }
+  if (body.type === "subscription-cancel") {
+    const result = await db.subscription.update({ where: { id: body.id }, data: { status: "CANCELLED" } });
+    await db.adminAuditLog.create({data:{adminId:user.id,action:"SUBSCRIPTION_CANCEL",entityType:"Subscription",entityId:body.id}});
+    return NextResponse.json({ message: "Langganan dibatalkan.", result });
+  }
+  if (body.type === "report-resolve") {
+    const result = await db.playbackReport.update({ where: { id: body.id }, data: { status: "RESOLVED", resolution: body.detail?.slice(0, 1000) || "Diperiksa admin." } });
+    await db.adminAuditLog.create({data:{adminId:user.id,action:"REPORT_RESOLVE",entityType:"PlaybackReport",entityId:body.id}});
+    return NextResponse.json({ message: "Laporan diselesaikan.", result });
   }
   if (body.type === "payment-paid") {
     const result = await db.payment.update({where:{id:body.id},data:{status:"PAID",paidAt:new Date()}});
