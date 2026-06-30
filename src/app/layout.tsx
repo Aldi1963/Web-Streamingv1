@@ -3,7 +3,7 @@ import "./fullscreen.css";
 import Link from "next/link";
 import { User, Crown } from "lucide-react";
 import { Suspense } from "react";
-import { BottomNavigation, SearchForm, SidebarNavigation } from "@/components/app-navigation";
+import { BottomNavigation, MobileMenu, SearchForm, SidebarNavigation } from "@/components/app-navigation";
 import { auth } from "@/services/auth-service";
 import type { Metadata } from "next";
 
@@ -61,6 +61,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <main className="main-content">
             {/* Mobile top bar */}
             <header className="mobile-header">
+              <MobileMenu loggedIn={Boolean(user)} />
               <Link className="brand" href="/" prefetch={false}>CLIPKU+</Link>
               <Suspense><SearchForm /></Suspense>
               <Link href={user ? "/dashboard" : "/login"} className="btn btn-sm" prefetch={false}>

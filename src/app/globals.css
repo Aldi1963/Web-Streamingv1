@@ -285,6 +285,14 @@ body:has(.watch-fullscreen) .bottom-nav{display:none!important}
 .mobile-header .search-input{width:100%;padding:7px 12px;font-size:0.82rem}
 .mobile-header .search-btn{padding:7px 10px}
 .mobile-header .btn-sm{padding:6px 12px;font-size:0.8rem;white-space:nowrap}
+.mobile-menu-trigger{display:grid;place-items:center;flex:0 0 40px;width:40px;height:40px;padding:0;color:var(--text);background:var(--panel);border:1px solid var(--line2);border-radius:10px;cursor:pointer}
+.mobile-drawer-overlay{position:fixed;inset:0;z-index:1200;background:#000a;backdrop-filter:blur(4px);animation:fadeIn .18s ease}
+.mobile-drawer{position:absolute;inset:0 auto 0 0;width:min(320px,86vw);display:flex;flex-direction:column;gap:18px;padding:max(18px,env(safe-area-inset-top)) 18px max(18px,env(safe-area-inset-bottom));background:var(--bg2);border-right:1px solid var(--line2);box-shadow:20px 0 60px #000b;animation:drawerIn .22s ease;overflow-y:auto}
+.mobile-drawer-head{display:flex;align-items:center;justify-content:space-between;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.mobile-drawer-head .brand{display:block!important}
+.mobile-drawer-footer{display:grid;gap:10px;margin-top:auto;padding-top:14px;border-top:1px solid var(--line)}
+.mobile-drawer-footer .btn{justify-content:center}
+@keyframes drawerIn{from{transform:translateX(-100%)}to{transform:translateX(0)}}
 
 /* --- BOTTOM NAV (Mobile) --- */
 .bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:50;background:var(--bg2);border-top:1px solid var(--line);padding:6px 8px env(safe-area-inset-bottom,8px);grid-template-columns:repeat(5,1fr)}
@@ -440,7 +448,7 @@ body:has(.watch-fullscreen) .bottom-nav{display:none!important}
 .plan-card .btn{margin-top:auto;justify-content:center}
 .legal-page .panel{max-width:760px;line-height:1.75}
 
-@media(max-width:900px){
+@media(max-width:768px){
   .sidebar{display:none}
   .mobile-header{display:flex}
   .bottom-nav{display:grid}
@@ -465,7 +473,7 @@ body:has(.watch-fullscreen) .bottom-nav{display:none!important}
   .featured-actions .wl-btn{padding:8px 14px;font-size:0.8rem}
   .drama-banner{height:200px}.drama-detail{margin-top:-40px}.drama-poster{width:140px}.episode-grid{grid-template-columns:1fr}
   .stats{grid-template-columns:1fr}
-  .admin-stats{grid-template-columns:repeat(2,1fr)}.admin .shell{padding:18px}.admin-sidebar{display:none}
+  .admin-stats{grid-template-columns:repeat(2,1fr)}.admin{display:block}.admin .shell{padding:18px}.admin-sidebar{display:flex;position:sticky;width:100%;height:auto;top:0;z-index:60;flex-direction:row;align-items:center;padding:10px;overflow-x:auto;gap:4px}.admin-sidebar h2{font-size:1rem;white-space:nowrap;margin:0 8px}.admin-sidebar a{flex:0 0 auto;white-space:nowrap}
   .filter-bar select{flex:1;min-width:130px}
 }
 @media(max-width:480px){

@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Film, Flame, Globe, Home, Search, Tv, User } from "lucide-react";
+import { Film, Flame, Globe, Home, Menu, Search, Tv, User, X } from "lucide-react";
+import { useEffect, useState } from "react";
 
 const items = [
   { href: "/", label: "Home", Icon: Home },
@@ -34,6 +35,39 @@ export function SidebarNavigation() {
       ))}
     </nav>
   );
+}
+
+export function MobileMenu({ loggedIn }: { loggedIn: boolean }) {
+  const pathname = usePathname();
+  const [open, setOpen] = useState(false);
+  useEffect(() => setOpen(false), [pathname]);
+  useEffect(() => {
+    document.body.style.overflow = open ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [open]);
+
+  return <>
+    <button type="button" className="mobile-menu-trigger" aria-label="Buka menu" aria-expanded={open} onClick={() => setOpen(true)}>
+      <Menu size={23} />
+    </button>
+    {open && <div className="mobile-drawer-overlay" onClick={() => setOpen(false)}>
+      <aside className="mobile-drawer" aria-label="Menu utama" onClick={event => event.stopPropagation()}>
+        <div className="mobile-drawer-head">
+          <Link className="brand" href="/">CLIPKU+</Link>
+          <button type="button" className="mobile-menu-trigger" aria-label="Tutup menu" onClick={() => setOpen(false)}><X size={23} /></button>
+        </div>
+        <nav className="sidebar-nav">
+          {items.map(({ href, label, Icon }) => <Link key={href} href={href} className={`sidebar-link${active(pathname, href) ? " active" : ""}`}>
+            <Icon size={20} className="sidebar-icon" />{label}
+          </Link>)}
+        </nav>
+        <div className="mobile-drawer-footer">
+          <Link href={loggedIn ? "/dashboard" : "/login"} className="sidebar-link"><User size={20} />{loggedIn ? "Akun saya" : "Masuk / Daftar"}</Link>
+          <Link href="/plans" className="btn">Lihat paket</Link>
+        </div>
+      </aside>
+    </div>}
+  </>;
 }
 
 export function BottomNavigation({ loggedIn }: { loggedIn: boolean }) {
