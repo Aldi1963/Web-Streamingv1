@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Crown, User } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { Suspense } from "react";
-import { BottomNavigation, MobileMenu, SearchForm, SidebarNavigation } from "@/components/app-navigation";
+import { MobileMenu, SearchForm, SidebarNavigation } from "@/components/app-navigation";
 
 const years = Array.from({ length: 5 }, (_, index) => new Date().getFullYear() - index);
 
@@ -51,7 +51,6 @@ export function AppShell({
         </Link>
       </header>
       {children}
-      <BottomNavigation loggedIn={Boolean(userName)} />
     </main>
   </div>;
 }
