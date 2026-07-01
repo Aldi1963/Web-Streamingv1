@@ -9,7 +9,7 @@ import { playbackAccess } from "@/services/playback-access-service";
 
 export const dynamic = "force-dynamic";
 
-const PROXYABLE_PROVIDERS = new Set(["dramabox", "netshort", "moviebox"]);
+const PROXYABLE_PROVIDERS = new Set(["dramabox", "netshort", "moviebox", "melolo"]);
 const INSECURE_TLS_HOSTS = new Set(["awscdn.netshort.com"]);
 
 function isAllowedVideoUrl(value: string) {
@@ -22,7 +22,8 @@ function isAllowedVideoUrl(value: string) {
         url.hostname === "awscdn.netshort.com" ||
         url.hostname.endsWith(".netshort.com") ||
         url.hostname === "bcdn.hakunaymatata.com" ||
-        url.hostname.endsWith(".hakunaymatata.com")
+        url.hostname.endsWith(".hakunaymatata.com") ||
+        url.hostname === "proxy.sonzaixlab.workers.dev"
       );
   } catch {
     return false;
@@ -151,7 +152,9 @@ export async function GET(request: NextRequest) {
 
   if (!source && contentId) {
     try {
-      const payload = await clipku.getStream(provider, contentId, episode);
+      const payload = provider === "melolo"
+        ? await clipku.getStreamV2(provider, contentId, episode)
+        : await clipku.getStream(provider, contentId, episode);
       source = extractStreamUrl(selectEpisodePayload(payload, provider, episode));
     } catch {
       source = null;

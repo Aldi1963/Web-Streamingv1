@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Volume2 } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { normalizeProgressPosition } from "@/lib/watch-progress";
 
@@ -43,7 +43,6 @@ export function WatchPlayer({
   const [activeSrc, setActiveSrc] = useState(
     sources.find(source => preferredQuality !== "auto" && source.label.toLowerCase().includes(preferredQuality.toLowerCase()))?.url ?? src,
   );
-  const [soundBlocked, setSoundBlocked] = useState(false);
 
   useEffect(() => {
     const preferred = sources.find(source =>
@@ -76,8 +75,7 @@ export function WatchPlayer({
     video.playbackRate = playbackSpeed;
     if (autoplay) {
       void video.play()
-        .then(() => setSoundBlocked(false))
-        .catch(() => setSoundBlocked(!defaultMuted));
+        .catch(() => undefined);
     }
     let lastSent = 0;
     const save = (force = false) => {
@@ -162,23 +160,6 @@ export function WatchPlayer({
         {subtitle && <track kind="subtitles" src={subtitle} srcLang="id" label="Indonesia" default />}
         Browser Anda tidak mendukung pemutar video.
       </video>
-      {soundBlocked && (
-        <button
-          type="button"
-          className="sound-start-button"
-          onClick={() => {
-            const video = ref.current;
-            if (!video) return;
-            video.muted = false;
-            video.volume = 1;
-            void video.play()
-              .then(() => setSoundBlocked(false))
-              .catch(() => setSoundBlocked(true));
-          }}
-        >
-          <Volume2 size={22} /> Putar dengan suara
-        </button>
-      )}
       {sources.length > 1 && <label className="quality-picker">Kualitas
         <select value={activeSrc} onChange={event => { setActiveSrc(event.target.value); resumeApplied.current = false; }}>
           {sources.map(source => <option key={source.url} value={source.url}>{source.label}</option>)}

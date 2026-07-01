@@ -12,7 +12,7 @@ import { playbackAccess, FREE_EPISODE_LIMIT } from "@/services/playback-access-s
 
 export const dynamic = "force-dynamic";
 
-const PROXY_VIDEO_PROVIDERS = new Set(["dramabox", "netshort", "moviebox"]);
+const PROXY_VIDEO_PROVIDERS = new Set(["dramabox", "netshort", "moviebox", "melolo"]);
 
 export default async function Watch({
   params,
