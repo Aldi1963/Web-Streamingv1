@@ -200,11 +200,11 @@ export class ContentService {
       try {
         const title = contentTitle(item)!;
         const poster = contentPoster(item) ?? `/provider-logos/${providerSlug}.jpg`;
-        const episodeCount = Number(contentText(item, "episode_count", "episodeCount", "episodes_count", "total_episode", "totalEpisodes") ?? 0);
+        const episodeCount = Number(contentText(item, "episode_count", "episodeCount", "episodes_count", "total_episode", "totalEpisodes", "totalEpisode", "episodeTotal", "chapterCount", "chapter_count") ?? 0);
         const providerViewCount = metricNumber(
-          contentText(item, "watch_value", "watchValue", "view_count", "viewCount", "views", "play_count", "playCount"),
+          contentText(item, "watch_value", "watchValue", "view_count", "viewCount", "views", "viewers", "play_count", "playCount", "hotValue", "heat"),
         );
-        const rating = Number(contentText(item, "rating", "score", "rate", "imdbRatingValue") ?? 0) || null;
+        const rating = Number(contentText(item, "rating", "score", "imdbRatingValue", "imdbRate", "rate") ?? 0) || null;
         await db.content.upsert({
           where: { providerSlug_clipkuContentId: { providerSlug, clipkuContentId: remoteId } },
           create: {
