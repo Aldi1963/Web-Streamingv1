@@ -1,4 +1,5 @@
 "use client";
+import { Activity, ChevronLeft, ChevronRight, CircleDollarSign, Database, Film, RefreshCw, Search, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 type Action = { type: string; id: string; value: boolean | string; label: string; detail?: boolean };
@@ -10,9 +11,14 @@ export function AdminConsole({ section }: { section: string }) {
   const [page, setPage] = useState(1);
   const [action, setAction] = useState<Action | null>(null);
   const [busy, setBusy] = useState(false);
-  const load = () => fetch(`/api/admin/overview?section=${encodeURIComponent(section)}`)
-    .then(async response => { const result = await response.json(); if (!response.ok) throw new Error(result.message); setData(result); })
-    .catch(error => setMessage(error.message));
+  const [loading, setLoading] = useState(true);
+  const load = () => {
+    setLoading(true);
+    return fetch(`/api/admin/overview?section=${encodeURIComponent(section)}`)
+      .then(async response => { const result = await response.json(); if (!response.ok) throw new Error(result.message); setData(result); })
+      .catch(error => setMessage(error.message))
+      .finally(() => setLoading(false));
+  };
   useEffect(() => { setPage(1); void load(); }, [section]);
   const rows = useMemo(() => (data?.rows || []).filter((row: any) => JSON.stringify(row).toLowerCase().includes(query.toLowerCase())), [data, query]);
   const visibleRows = rows.slice((page - 1) * 20, page * 20);
@@ -35,7 +41,10 @@ export function AdminConsole({ section }: { section: string }) {
     if (/At$/.test(key) && !Number.isNaN(Date.parse(String(value)))) return new Date(value).toLocaleString("id-ID");
     return String(value);
   };
-  if (!data) return <div className="panel admin-empty">{message || <span className="skeleton-line">Memuat data…</span>}</div>;
+  if (!data) return <div className="admin-loading" aria-live="polite">
+    {[1,2,3,4].map(item => <div className="panel admin-stat-skeleton" key={item}><span/><strong/></div>)}
+    <div className="panel admin-table-skeleton"><span/><span/><span/><span/></div>
+  </div>;
   const stats = data.stats;
   const overviewMetrics = [
     ["Pengguna", stats.users],
@@ -55,7 +64,20 @@ export function AdminConsole({ section }: { section: string }) {
   const syncSuccessRate = syncAll ? Math.round(syncTotals.success / syncAll * 100) : 0;
   return <div className="admin-console">
     {section === "dashboard" && <div className="admin-stats">
-      {[["User",stats.users],["Konten",stats.contents],["Langganan aktif",stats.activeSubscriptions],["Transaksi",stats.payments],["Endpoint",stats.endpoints],["Sync bermasalah",stats.failedSyncs]].map(([label,value]) => <div className="panel" key={String(label)}>{label}<strong>{value}</strong></div>)}
+      {[
+        ["Pengguna",stats.users,Users,"neutral"],
+        ["Konten",stats.contents,Film,"neutral"],
+        ["Langganan aktif",stats.activeSubscriptions,Activity,"success"],
+        ["Transaksi",stats.payments,CircleDollarSign,"neutral"],
+        ["Endpoint API",stats.endpoints,Database,"neutral"],
+        ["Sync bermasalah",stats.failedSyncs,RefreshCw,stats.failedSyncs ? "danger" : "success"],
+      ].map(([label,value,Icon,tone]) => {
+        const MetricIcon = Icon as typeof Users;
+        return <div className={`panel admin-stat-card ${tone}`} key={String(label)}>
+          <span className="admin-stat-icon"><MetricIcon size={19}/></span>
+          <div><span>{String(label)}</span><strong>{Number(value).toLocaleString("id-ID")}</strong></div>
+        </div>;
+      })}
     </div>}
     {section === "dashboard" && <div className="admin-charts">
       <section className="panel admin-chart-card">
@@ -76,7 +98,10 @@ export function AdminConsole({ section }: { section: string }) {
       </section>
     </div>}
     {data.rows && <section className="panel admin-data">
-      <div className="admin-toolbar"><input aria-label="Cari data" placeholder="Cari data…" value={query} onChange={event => { setQuery(event.target.value); setPage(1); }} /><span>{rows.length} data</span></div>
+      <div className="admin-toolbar">
+        <div className="admin-search"><Search size={16}/><input aria-label="Cari data" placeholder="Cari data…" value={query} onChange={event => { setQuery(event.target.value); setPage(1); }}/>{query && <button aria-label="Hapus pencarian" onClick={() => setQuery("")}>×</button>}</div>
+        <div className="admin-toolbar-meta"><span>{rows.length.toLocaleString("id-ID")} data</span><button className="admin-icon-button" aria-label="Muat ulang data" title="Muat ulang" disabled={loading} onClick={() => void load()}><RefreshCw size={16} className={loading ? "spin" : ""}/></button></div>
+      </div>
       {!rows.length ? <p className="muted">Belum ada data yang cocok.</p> : <div className="admin-table-wrap"><table><thead><tr>
         {Object.keys(rows[0]).filter(key => !["id","_count"].includes(key)).map(key => <th key={key}>{key}</th>)}<th>Aksi</th>
       </tr></thead><tbody>{visibleRows.map((row: any) => <tr key={row.id}>
@@ -92,9 +117,9 @@ export function AdminConsole({ section }: { section: string }) {
           {row.invoiceNumber && row.status !== "PAID" && <button onClick={() => ask("payment-paid",row.id,true,"Tandai pembayaran lunas",true)}>Tandai lunas</button>}
         </td>
       </tr>)}</tbody></table></div>}
-      {pages > 1 && <div className="table-pagination"><button disabled={page === 1} onClick={() => setPage(value => value - 1)}>Sebelumnya</button><span>{page} / {pages}</span><button disabled={page === pages} onClick={() => setPage(value => value + 1)}>Berikutnya</button></div>}
+      {pages > 1 && <div className="table-pagination"><button aria-label="Halaman sebelumnya" disabled={page === 1} onClick={() => setPage(value => value - 1)}><ChevronLeft size={16}/>Sebelumnya</button><span>Halaman <strong>{page}</strong> dari {pages}</span><button disabled={page === pages} onClick={() => setPage(value => value + 1)}>Berikutnya<ChevronRight size={16}/></button></div>}
     </section>}
-    {data.recentSyncs && <section className="panel admin-data"><h2>Sinkronisasi terbaru</h2>{data.recentSyncs.map((item:any)=><p key={item.id}><strong>{item.providerName}</strong> · <span className={`status-badge status-${item.status.toLowerCase()}`}>{item.status}</span> · {item.successCount}/{item.totalData} berhasil</p>)}</section>}
+    {data.recentSyncs && <section className="panel admin-data admin-sync-list"><div className="admin-data-heading"><div><p className="eyebrow">Aktivitas sistem</p><h2>Sinkronisasi terbaru</h2></div><Activity size={19}/></div>{data.recentSyncs.map((item:any)=><div className="admin-sync-row" key={item.id}><span className={`admin-sync-dot ${item.status.toLowerCase()}`}/><div><strong>{item.providerName}</strong><small>{item.successCount.toLocaleString("id-ID")} dari {item.totalData.toLocaleString("id-ID")} data berhasil</small></div><span className={`status-badge status-${item.status.toLowerCase()}`}>{item.status}</span></div>)}</section>}
     {message && <div className="admin-toast" role="status">{message}<button aria-label="Tutup notifikasi" onClick={() => setMessage("")}>×</button></div>}
     {action && <div className="dialog-overlay" onClick={() => setAction(null)}><form className="dialog-card" role="dialog" aria-modal="true" onSubmit={event => { event.preventDefault(); const form = new FormData(event.currentTarget); void execute(String(form.get("detail") || "")); }} onClick={event => event.stopPropagation()}>
       <h2>Konfirmasi tindakan</h2><p>Anda akan <strong>{action.label}</strong>. Tindakan ini dicatat dalam audit log.</p>
