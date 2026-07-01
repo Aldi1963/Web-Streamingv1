@@ -16,20 +16,7 @@ export class AuthService {
     if (user.isSuspended) throw new Error("Akun dinonaktifkan. Hubungi dukungan.");
     const token = await new SignJWT({ role: user.role }).setProtectedHeader({ alg: "HS256" }).setSubject(user.id).setExpirationTime("7d").sign(secret);
     const tokenHash = createHash("sha256").update(token).digest("hex");
-    const activeSubscription = await db.subscription.findFirst({
-      where: { userId: user.id, status: { in: ["ACTIVE", "TRIAL", "GRACE"] }, expiresAt: { gt: new Date() } },
-      include: { plan: { select: { maxDevices: true } } },
-      orderBy: { expiresAt: "desc" },
-    });
-    const maxDevices = Math.max(1, activeSubscription?.plan.maxDevices ?? 1);
-    const activeSessions = await db.deviceSession.findMany({
-      where: { userId: user.id, expiresAt: { gt: new Date() } },
-      orderBy: { lastActiveAt: "asc" },
-      select: { id: true },
-    });
-    if (activeSessions.length >= maxDevices) {
-      await db.deviceSession.deleteMany({ where: { id: { in: activeSessions.slice(0, activeSessions.length - maxDevices + 1).map(item => item.id) } } });
-    }
+    await db.deviceSession.deleteMany({ where: { userId: user.id, expiresAt: { lte: new Date() } } });
     const userAgent = context?.userAgent?.slice(0, 250) || null;
     await db.deviceSession.create({
       data: {

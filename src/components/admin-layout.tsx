@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, CreditCard, Database, FileText, Film, Home, Menu, Settings, Shield, Users, X } from "lucide-react";
+import { Activity, CreditCard, Database, Film, Home, Menu, Settings, Users, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { ReactNode, useEffect, useState } from "react";
 
@@ -13,27 +13,16 @@ const groups: AdminGroup[] = [
     ["/admin/dashboard", "Ringkasan", Home],
     ["/admin/reports", "Laporan video", Activity],
   ] },
-  { label: "Pengguna", restricted: true, items: [
-    ["/admin/users", "Akun pengguna", Users],
-    ["/admin/devices", "Perangkat", Shield],
+  { label: "Manajemen", restricted: true, items: [
+    ["/admin/users", "Pengguna", Users],
+    ["/admin/monetization", "Monetisasi", CreditCard],
   ] },
-  { label: "Monetisasi", restricted: true, items: [
-    ["/admin/subscriptions", "Langganan", CreditCard],
-    ["/admin/payments", "Pembayaran", CreditCard],
-    ["/admin/plans", "Paket", FileText],
-  ] },
-  { label: "Katalog", items: [
-    ["/admin/contents", "Konten", Film],
-    ["/admin/providers", "Provider", Database],
-  ] },
-  { label: "Integrasi", items: [
-    ["/admin/api-clipku", "Integrasi API", Database],
+  { label: "Konten & sistem", items: [
+    ["/admin/catalog", "Katalog", Film],
+    ["/admin/integrations", "Integrasi", Database],
   ] },
   { label: "Sistem", restricted: true, items: [
-    ["/admin/settings", "Pengaturan web", Settings],
-    ["/admin/seo", "SEO", Settings],
-    ["/admin/payment-settings", "Payment gateway", CreditCard],
-    ["/admin/error-logs", "Monitoring & log", Activity],
+    ["/admin/settings", "Pengaturan", Settings],
   ] },
 ];
 

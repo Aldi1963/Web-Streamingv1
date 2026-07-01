@@ -8,6 +8,23 @@ async function permitted() {
   return user && ["SUPER_ADMIN", "ADMIN", "CONTENT_MANAGER"].includes(user.role) ? user : null;
 }
 
+const roleRank: Record<string, number> = {
+  USER: 0,
+  SUBSCRIBER: 0,
+  CONTENT_MANAGER: 1,
+  ADMIN: 2,
+  SUPER_ADMIN: 3,
+};
+
+async function canManageUser(actor: { id: string; role: string }, targetId: string) {
+  if (actor.id === targetId) return false;
+  const target = await db.user.findUnique({
+    where: { id: targetId },
+    select: { role: true },
+  });
+  return Boolean(target && roleRank[actor.role] > roleRank[target.role]);
+}
+
 export async function GET(request: NextRequest) {
   const user = await permitted();
   if (!user) return NextResponse.json({ message: "Forbidden" }, { status: 403 });
@@ -84,12 +101,17 @@ export async function PATCH(request: NextRequest) {
   }
   if (user.role === "CONTENT_MANAGER") return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   if (body.type === "logout-devices") {
+    if (!await canManageUser(user, body.id)) {
+      return NextResponse.json({ message: "Tidak dapat mengelola sesi pengguna dengan role setara atau lebih tinggi." }, { status: 403 });
+    }
     const result = await db.deviceSession.deleteMany({ where: { userId: body.id } });
     await db.adminAuditLog.create({data:{adminId:user.id,action:"LOGOUT_DEVICES",entityType:"User",entityId:body.id,detail:{count:result.count}}});
     return NextResponse.json({ message: `${result.count} sesi perangkat dihapus.` });
   }
   if (body.type === "user-suspended") {
-    if (body.id === user.id) return NextResponse.json({ message: "Tidak dapat menonaktifkan akun sendiri." }, { status: 422 });
+    if (!await canManageUser(user, body.id)) {
+      return NextResponse.json({ message: "Tidak dapat menonaktifkan pengguna dengan role setara atau lebih tinggi." }, { status: 403 });
+    }
     const suspended = Boolean(body.value);
     const result = await db.$transaction([
       db.user.update({ where: { id: body.id }, data: { isSuspended: suspended, suspendedAt: suspended ? new Date() : null } }),
@@ -119,6 +141,9 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ message: "Laporan diselesaikan.", result });
   }
   if (body.type === "payment-paid") {
+    if (user.role !== "SUPER_ADMIN") {
+      return NextResponse.json({ message: "Hanya SUPER_ADMIN dapat mengaktifkan pembayaran manual." }, { status: 403 });
+    }
     const reason = body.detail?.trim();
     if (!reason || reason.length < 8) return NextResponse.json({message:"Alasan aktivasi manual minimal 8 karakter."},{status:422});
     const result = await activatePayment(body.id,{admin:{id:user.id,reason}});

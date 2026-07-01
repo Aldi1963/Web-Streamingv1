@@ -40,7 +40,8 @@ model User {
   isSuspended Boolean @default(false)
   suspendedAt DateTime?
   emailVerifiedAt DateTime?
-  rememberToken String?
+  rememberToken String? @unique
+  rememberTokenExpiresAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   sessions DeviceSession[]
@@ -227,6 +228,8 @@ model Content {
   playbackStatus String? @default("PENDING")
   playbackCheckedAt DateTime?
   viewCount Int @default(0)
+  providerViewCount Int @default(0)
+  episodeCount Int @default(0)
   trendingScore Float @default(0)
   lastViewedAt DateTime?
   createdAt DateTime @default(now())

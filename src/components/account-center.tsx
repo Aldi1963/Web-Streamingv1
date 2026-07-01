@@ -5,7 +5,7 @@ import { FormEvent, useEffect, useState } from "react";
 
 type Account = {
   profile: { name: string; email: string; emailVerifiedAt?: string | null; createdAt: string };
-  subscription?: { status: string; startsAt: string; expiresAt: string; plan: { name: string; maxDevices: number; maxResolution: string } } | null;
+  subscription?: { status: string; startsAt: string; expiresAt: string; plan: { name: string } } | null;
   payments: Array<{ id: string; invoiceNumber: string; provider: string; amount: string; status: string; paidAt?: string; createdAt: string }>;
   devices: Array<{ id: string; deviceName?: string; browser?: string; ip?: string; lastActiveAt: string; expiresAt: string }>;
   preferences?: { autoplay: boolean; defaultMuted: boolean; playbackSpeed: number; preferredQuality: string; emailNotifications: boolean } | null;
@@ -60,7 +60,7 @@ export function AccountCenter({ section }: { section: string }) {
         <h2>{account.subscription.plan.name}</h2>
         <p>Status: <strong>{account.subscription.status}</strong></p>
         <p>Berlaku hingga: {new Date(account.subscription.expiresAt).toLocaleString("id-ID")}</p>
-        <p>{account.subscription.plan.maxDevices} perangkat · Maksimal {account.subscription.plan.maxResolution}</p>
+        <p>Akses seluruh episode aktif selama masa paket.</p>
       </> : <><h2>Paket gratis</h2><p className="muted">Belum ada langganan aktif.</p><Link className="btn" href="/plans">Pilih paket</Link></>}
     </div>}
 

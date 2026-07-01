@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Flame, Play, Star } from "lucide-react";
 import { db } from "@/lib/db";
 import { PopularFilters } from "@/components/popular-filters";
+import { ContentCardMetrics } from "@/components/content-card-metrics";
 
 export const dynamic = "force-dynamic";
 
@@ -78,6 +79,10 @@ export default async function PopularPage({
       orderBy: [{ trendingScore: "desc" }, { viewCount: "desc" }, { rating: "desc" }, { lastSyncedAt: "desc" }],
       skip: (page - 1) * PER_PAGE,
       take: PER_PAGE,
+      select: {
+        id: true, slug: true, title: true, posterUrl: true, providerName: true, type: true,
+        rating: true, viewCount: true, providerViewCount: true, episodeCount: true,
+      },
     }).catch(() => []),
     db.content.count({ where }).catch(() => 0),
   ]);
@@ -134,8 +139,8 @@ export default async function PopularPage({
               </div>
               <div className="card-body">
                 <h3>{item.title}</h3>
+                <ContentCardMetrics views={item.providerViewCount || item.viewCount} rating={item.rating} episodes={item.episodeCount} />
                 <div className="meta">{item.providerName}<span className="dot" />{item.type}</div>
-                <div className="meta"><Flame size={12} /> {item.viewCount.toLocaleString("id-ID")} tayangan</div>
               </div>
             </Link>
           ))}

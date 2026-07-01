@@ -29,7 +29,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "Cloudflare menerima secret; challenge browser diperlukan untuk pengujian penuh." });
   }
   const provider = await getSetting("PAYMENT_PROVIDER");
-  const complete = provider === "pakasir"
+  const complete = provider === "aldiqris"
+    ? Boolean(await getSetting("ALDIQRIS_API_KEY"))
+    : provider === "pakasir"
     ? Boolean(await getSetting("PAKASIR_API_KEY") && await getSetting("PAKASIR_SLUG"))
     : provider === "midtrans"
       ? Boolean(await getSetting("MIDTRANS_SERVER_KEY") && await getSetting("MIDTRANS_CLIENT_KEY"))

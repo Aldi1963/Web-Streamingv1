@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, Eye, EyeOff, LockKeyhole, Mail, Save, ShieldCheck, WalletCards } from "lucide-react";
+import { CheckCircle2, ClipboardCopy, Eye, EyeOff, LockKeyhole, Mail, Save, ShieldCheck, WalletCards } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 type Setting = { key: string; value: string; sensitive: boolean; configured: boolean };
@@ -8,6 +8,8 @@ type Group = { title: string; description: string; icon: typeof Mail; keys: stri
 
 const labels: Record<string, { label: string; help: string }> = {
   PAYMENT_PROVIDER: { label: "Gateway aktif", help: "Gateway yang digunakan saat pengguna membuat pembayaran." },
+  ALDIQRIS_API_KEY: { label: "AldiQRIS API key", help: "Bearer token dari dashboard AldiQRIS." },
+  ALDIQRIS_BASE_URL: { label: "AldiQRIS API URL", help: "Default: https://aldiqris.pages.dev/api" },
   PAKASIR_API_KEY: { label: "Pakasir API key", help: "Kunci server dari dashboard Pakasir." },
   PAKASIR_SLUG: { label: "Pakasir slug", help: "Slug proyek Pakasir untuk membuat URL pembayaran." },
   MIDTRANS_SERVER_KEY: { label: "Midtrans server key", help: "Kunci privat untuk verifikasi transaksi Midtrans." },
@@ -24,14 +26,14 @@ const labels: Record<string, { label: string; help: string }> = {
 };
 
 const paymentGroups: Group[] = [
-  { title: "Gateway pembayaran", description: "Pilih provider aktif dan konfigurasi kredensialnya.", icon: WalletCards, keys: ["PAYMENT_PROVIDER","PAKASIR_API_KEY","PAKASIR_SLUG","MIDTRANS_SERVER_KEY","MIDTRANS_CLIENT_KEY","XENDIT_SECRET_KEY"] },
+  { title: "Gateway pembayaran", description: "Pilih provider aktif dan konfigurasi kredensialnya.", icon: WalletCards, keys: ["PAYMENT_PROVIDER","ALDIQRIS_API_KEY","ALDIQRIS_BASE_URL","PAKASIR_API_KEY","PAKASIR_SLUG","MIDTRANS_SERVER_KEY","MIDTRANS_CLIENT_KEY","XENDIT_SECRET_KEY"] },
 ];
 const systemGroups: Group[] = [
   { title: "Email sistem", description: "Konfigurasi SMTP untuk verifikasi, invoice, dan notifikasi.", icon: Mail, keys: ["MAIL_HOST","MAIL_PORT","MAIL_USERNAME","MAIL_PASSWORD","MAIL_FROM_ADDRESS"] },
   { title: "Keamanan & otomasi", description: "Perlindungan bot dan akses proses terjadwal.", icon: ShieldCheck, keys: ["CLOUDFLARE_TURNSTILE_SITE_KEY","CLOUDFLARE_TURNSTILE_SECRET_KEY","CRON_SECRET"] },
 ];
 
-export function AdminSettingsForm({ section = "settings" }: { section?: string }) {
+export function AdminSettingsForm({ section = "settings", webhookUrl = "/api/payments/aldiqris/webhook" }: { section?: string; webhookUrl?: string }) {
   const groups = section === "payment-settings" ? paymentGroups : systemGroups;
   const allowed = useMemo(() => new Set(groups.flatMap(group => group.keys)), [groups]);
   const [settings, setSettings] = useState<Setting[]>([]);
@@ -41,6 +43,7 @@ export function AdminSettingsForm({ section = "settings" }: { section?: string }
   const [state, setState] = useState<"loading"|"idle"|"saving"|"saved"|"error">("loading");
   const [message, setMessage] = useState("");
   const [testing, setTesting] = useState(false);
+  const [webhookCopied, setWebhookCopied] = useState(false);
 
   useEffect(() => {
     fetch("/api/admin/settings").then(async response => {
@@ -75,9 +78,15 @@ export function AdminSettingsForm({ section = "settings" }: { section?: string }
         const item = settings.find(setting => setting.key === key); if (!item) return null;
         const meta = labels[key] || { label: key, help: "" };
         return <label className="settings-field" key={key}><span className="settings-field-title">{meta.label}{item.configured && <small><CheckCircle2 size={13}/> Terhubung</small>}</span><span className="settings-help">{meta.help}</span>
-          <div className="settings-input-wrap">{key === "PAYMENT_PROVIDER" ? <select value={values[key] || "pakasir"} onChange={event => setValues({...values,[key]:event.target.value})}><option value="pakasir">Pakasir</option><option value="midtrans">Midtrans</option><option value="xendit">Xendit</option></select> : <><input type={item.sensitive && !visible.has(key) ? "password" : "text"} autoComplete="off" placeholder={item.sensitive && item.configured ? "Tersimpan — isi untuk mengganti" : "Belum dikonfigurasi"} value={values[key] || ""} onChange={event => setValues({...values,[key]:event.target.value})}/>{item.sensitive && <button type="button" aria-label={visible.has(key)?"Sembunyikan nilai":"Tampilkan nilai"} onClick={() => setVisible(current => { const next=new Set(current); next.has(key)?next.delete(key):next.add(key); return next; })}>{visible.has(key)?<EyeOff size={18}/>:<Eye size={18}/>}</button>}</>}</div>
+          <div className="settings-input-wrap">{key === "PAYMENT_PROVIDER" ? <select value={values[key] || "pakasir"} onChange={event => setValues({...values,[key]:event.target.value})}><option value="aldiqris">AldiQRIS</option><option value="pakasir">Pakasir</option><option value="midtrans">Midtrans</option><option value="xendit">Xendit</option></select> : <><input type={item.sensitive && !visible.has(key) ? "password" : "text"} autoComplete="off" placeholder={item.sensitive && item.configured ? "Tersimpan — isi untuk mengganti" : "Belum dikonfigurasi"} value={values[key] || ""} onChange={event => setValues({...values,[key]:event.target.value})}/>{item.sensitive && <button type="button" aria-label={visible.has(key)?"Sembunyikan nilai":"Tampilkan nilai"} onClick={() => setVisible(current => { const next=new Set(current); next.has(key)?next.delete(key):next.add(key); return next; })}>{visible.has(key)?<EyeOff size={18}/>:<Eye size={18}/>}</button>}</>}</div>
         </label>;
       })}</div>
+      {section === "payment-settings" && <div className="settings-fields">
+        <label className="settings-field"><span className="settings-field-title">URL webhook AldiQRIS</span><span className="settings-help">Masukkan URL ini sebagai target webhook di gateway AldiQRIS.</span>
+          <div className="settings-input-wrap"><input type="text" readOnly value={webhookUrl}/><button type="button" aria-label="Salin URL webhook" onClick={async () => { await navigator.clipboard.writeText(webhookUrl); setWebhookCopied(true); window.setTimeout(() => setWebhookCopied(false), 2000); }}><ClipboardCopy size={18}/></button></div>
+          {webhookCopied && <small><CheckCircle2 size={13}/> URL berhasil disalin</small>}
+        </label>
+      </div>}
     </section>)}
     <div className="settings-savebar"><div>{message || (dirty ? "Ada perubahan yang belum disimpan." : "Semua perubahan telah tersimpan.")}</div><div className="settings-save-actions">{section==="payment-settings"?<button type="button" className="btn btn-secondary" disabled={dirty||testing} onClick={()=>testConfiguration("payment")}>{testing?"Menguji…":"Uji payment"}</button>:<><button type="button" className="btn btn-secondary" disabled={dirty||testing} onClick={()=>testConfiguration("email")}>Uji SMTP</button><button type="button" className="btn btn-secondary" disabled={dirty||testing} onClick={()=>testConfiguration("security")}>Uji Turnstile</button></>}<button className="btn" disabled={!dirty || state === "saving"}><Save size={17}/>{state === "saving" ? "Menyimpan…" : "Simpan perubahan"}</button></div></div>
   </form>;

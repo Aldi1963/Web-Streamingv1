@@ -3,6 +3,9 @@ import https from "node:https";
 import http from "node:http";
 import { Readable } from "node:stream";
 import { clipku } from "@/services/clipku-api-service";
+import { auth } from "@/services/auth-service";
+import { db } from "@/lib/db";
+import { playbackAccess } from "@/services/playback-access-service";
 
 export const dynamic = "force-dynamic";
 
@@ -70,6 +73,10 @@ function selectEpisodePayload(raw: unknown, provider: string, episode: number): 
 
 function requestVideoStream(source: string, range: string | null, redirectCount = 0): Promise<Response> {
   return new Promise((resolve, reject) => {
+    if (!isAllowedVideoUrl(source)) {
+      reject(new Error("Redirect video menuju host yang tidak diizinkan."));
+      return;
+    }
     const url = new URL(source);
     const client = url.protocol === "http:" ? http : https;
     const req = client.request(
@@ -88,7 +95,12 @@ function requestVideoStream(source: string, range: string | null, redirectCount 
         const location = res.headers.location;
         if (status >= 300 && status < 400 && location && redirectCount < 3) {
           res.resume();
-          resolve(requestVideoStream(new URL(location, source).toString(), range, redirectCount + 1));
+          const redirectUrl = new URL(location, source).toString();
+          if (!isAllowedVideoUrl(redirectUrl)) {
+            reject(new Error("Redirect video menuju host yang tidak diizinkan."));
+            return;
+          }
+          resolve(requestVideoStream(redirectUrl, range, redirectCount + 1));
           return;
         }
 
@@ -114,6 +126,8 @@ function requestVideoStream(source: string, range: string | null, redirectCount 
 }
 
 export async function GET(request: NextRequest) {
+  const user = await auth.currentUser();
+  if (!user) return Response.json({ message: "Unauthorized" }, { status: 401 });
   const provider = request.nextUrl.searchParams.get("provider") ?? "dramabox";
   let source = request.nextUrl.searchParams.get("url");
   const contentId = request.nextUrl.searchParams.get("contentId") ?? request.nextUrl.searchParams.get("bookId");
@@ -121,6 +135,16 @@ export async function GET(request: NextRequest) {
 
   if (!PROXYABLE_PROVIDERS.has(provider)) {
     return Response.json({ message: "Provider video tidak didukung." }, { status: 400 });
+  }
+  if (!contentId) return Response.json({ message: "Konten wajib diisi." }, { status: 400 });
+  const content = await db.content.findFirst({
+    where: { providerSlug: provider, clipkuContentId: contentId },
+    select: { id: true },
+  });
+  if (!content) return Response.json({ message: "Konten tidak ditemukan." }, { status: 404 });
+  const access = await playbackAccess(user.id, episode);
+  if (!access.allowed) {
+    return Response.json({ message: "Episode 9 dan seterusnya memerlukan paket aktif." }, { status: 402 });
   }
 
   if (!source && contentId) {

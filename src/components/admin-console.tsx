@@ -37,10 +37,44 @@ export function AdminConsole({ section }: { section: string }) {
   };
   if (!data) return <div className="panel admin-empty">{message || <span className="skeleton-line">Memuat data…</span>}</div>;
   const stats = data.stats;
+  const overviewMetrics = [
+    ["Pengguna", stats.users],
+    ["Langganan aktif", stats.activeSubscriptions],
+    ["Transaksi", stats.payments],
+    ["Endpoint API", stats.endpoints],
+  ] as Array<[string, number]>;
+  const overviewMax = Math.max(1, ...overviewMetrics.map(([, value]) => value));
+  const syncTotals = (data.recentSyncs || []).reduce((total: { success: number; failed: number }, item: any) => {
+    const success = Number(item.successCount || 0);
+    const all = Number(item.totalData || 0);
+    total.success += success;
+    total.failed += Math.max(0, all - success);
+    return total;
+  }, { success: 0, failed: 0 });
+  const syncAll = syncTotals.success + syncTotals.failed;
+  const syncSuccessRate = syncAll ? Math.round(syncTotals.success / syncAll * 100) : 0;
   return <div className="admin-console">
-    <div className="admin-stats">
+    {section === "dashboard" && <div className="admin-stats">
       {[["User",stats.users],["Konten",stats.contents],["Langganan aktif",stats.activeSubscriptions],["Transaksi",stats.payments],["Endpoint",stats.endpoints],["Sync bermasalah",stats.failedSyncs]].map(([label,value]) => <div className="panel" key={String(label)}>{label}<strong>{value}</strong></div>)}
-    </div>
+    </div>}
+    {section === "dashboard" && <div className="admin-charts">
+      <section className="panel admin-chart-card">
+        <div className="admin-chart-head"><div><p className="eyebrow">Statistik web app</p><h2>Aktivitas platform</h2></div><span>Data saat ini</span></div>
+        <div className="admin-bar-chart">
+          {overviewMetrics.map(([label,value]) => <div className="admin-bar-row" key={label}>
+            <div className="admin-bar-label"><span>{label}</span><strong>{value.toLocaleString("id-ID")}</strong></div>
+            <div className="admin-bar-track"><i style={{ width: `${value ? Math.max(4, value / overviewMax * 100) : 0}%` }}/></div>
+          </div>)}
+        </div>
+      </section>
+      <section className="panel admin-chart-card">
+        <div className="admin-chart-head"><div><p className="eyebrow">10 sinkronisasi terakhir</p><h2>Kesehatan sinkronisasi</h2></div></div>
+        <div className="admin-donut-wrap">
+          <div className="admin-donut" style={{ background: `conic-gradient(#22c55e 0 ${syncSuccessRate}%, #ef4444 ${syncSuccessRate}% 100%)` }}><div><strong>{syncSuccessRate}%</strong><span>berhasil</span></div></div>
+          <div className="admin-chart-legend"><span><i className="success"/>Berhasil <strong>{syncTotals.success.toLocaleString("id-ID")}</strong></span><span><i className="failed"/>Gagal <strong>{syncTotals.failed.toLocaleString("id-ID")}</strong></span></div>
+        </div>
+      </section>
+    </div>}
     {data.rows && <section className="panel admin-data">
       <div className="admin-toolbar"><input aria-label="Cari data" placeholder="Cari data…" value={query} onChange={event => { setQuery(event.target.value); setPage(1); }} /><span>{rows.length} data</span></div>
       {!rows.length ? <p className="muted">Belum ada data yang cocok.</p> : <div className="admin-table-wrap"><table><thead><tr>

@@ -2,28 +2,15 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { apiError } from "@/lib/http";
-import { cookies } from "next/headers";
-import { jwtVerify } from "jose";
-
-const JWT_SECRET = new TextEncoder().encode(process.env.AUTH_SECRET);
-
-async function getUserId(): Promise<string | null> {
-  try {
-    const token = (await cookies()).get("clipku_session")?.value;
-    if (!token) return null;
-    const { payload } = await jwtVerify(token, JWT_SECRET);
-    return payload.sub as string;
-  } catch {
-    return null;
-  }
-}
+import { auth } from "@/services/auth-service";
 
 // GET: List user's watchlist
 export async function GET() {
   try {
-    const userId = await getUserId();
-    if (!userId)
+    const user = await auth.currentUser();
+    if (!user)
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const userId = user.id;
 
     const items = await db.watchlist.findMany({
       where: { userId },
@@ -53,9 +40,10 @@ export async function GET() {
 // POST: Add to watchlist
 export async function POST(request: Request) {
   try {
-    const userId = await getUserId();
-    if (!userId)
+    const user = await auth.currentUser();
+    if (!user)
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const userId = user.id;
 
     const { contentId } = z
       .object({ contentId: z.string() })
@@ -76,9 +64,10 @@ export async function POST(request: Request) {
 // DELETE: Remove from watchlist
 export async function DELETE(request: Request) {
   try {
-    const userId = await getUserId();
-    if (!userId)
+    const user = await auth.currentUser();
+    if (!user)
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const userId = user.id;
 
     const { contentId } = z
       .object({ contentId: z.string() })

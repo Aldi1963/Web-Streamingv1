@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Play } from "lucide-react";
+import { ContentCardMetrics } from "@/components/content-card-metrics";
 
 type ContentItem = {
   id: string;
@@ -8,6 +9,10 @@ type ContentItem = {
   providerName: string;
   type: string;
   posterUrl?: string | null;
+  rating?: number | null;
+  viewCount?: number;
+  providerViewCount?: number;
+  episodeCount?: number;
 };
 
 export function ContentGrid({
@@ -55,6 +60,7 @@ export function ContentGrid({
             </div>
             <div className="card-body">
               <h3>{item.title}</h3>
+              <ContentCardMetrics views={item.providerViewCount || item.viewCount} rating={item.rating} episodes={item.episodeCount} />
               <div className="meta">
                 {item.providerName}
                 <span className="dot" />

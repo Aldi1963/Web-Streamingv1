@@ -17,6 +17,7 @@
     "audit:playback": "tsx scripts/audit-playback.ts",
     "audit:media": "tsx scripts/audit-media.ts",
     "posters:backfill": "tsx scripts/backfill-missing-posters.ts",
+    "metrics:backfill": "tsx scripts/backfill-content-metrics.ts",
     "trending:update": "tsx scripts/update-trending.ts",
     "backup": "sh scripts/backup.sh",
     "test": "vitest run"
@@ -29,6 +30,7 @@
     "lucide-react": "^1.21.0",
     "next": "^16.2.9",
     "nodemailer": "^9.0.1",
+    "qrcode": "^1.5.4",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "zod": "^3.24.1"
@@ -37,6 +39,7 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22.10.2",
     "@types/nodemailer": "^7.0.11",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "prisma": "^5.22.0",

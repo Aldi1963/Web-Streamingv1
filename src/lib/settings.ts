@@ -8,6 +8,8 @@ export const settingDefinitions = {
   SEO_DEFAULT_IMAGE: { sensitive: false },
   SEO_INDEXING: { sensitive: false, fallback: "enabled" },
   PAYMENT_PROVIDER: { sensitive: false, fallback: "pakasir" },
+  ALDIQRIS_API_KEY: { sensitive: true },
+  ALDIQRIS_BASE_URL: { sensitive: false, fallback: "https://aldiqris.pages.dev/api" },
   PAKASIR_API_KEY: { sensitive: true },
   PAKASIR_SLUG: { sensitive: false },
   MIDTRANS_SERVER_KEY: { sensitive: true },

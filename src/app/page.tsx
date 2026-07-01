@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { Play, Star, Tv, Flame, ArrowRight, Layers3 } from "lucide-react";
 import { auth } from "@/services/auth-service";
 import { ProviderHeroSlider } from "@/components/provider-hero-slider";
+import { ContentCardMetrics } from "@/components/content-card-metrics";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +35,9 @@ const cardSelect = {
   providerName: true,
   type: true,
   rating: true,
+  viewCount: true,
+  providerViewCount: true,
+  episodeCount: true,
 } as const;
 
 export default async function Home({ searchParams }: HomeProps) {
@@ -156,6 +160,7 @@ export default async function Home({ searchParams }: HomeProps) {
               </div>
               <div className="card-body">
                 <h3>{item.title}</h3>
+                <ContentCardMetrics views={item.providerViewCount || item.viewCount} rating={item.rating} episodes={item.episodeCount} />
                 <div className="meta">{item.providerName}<span className="dot" />{item.type}</div>
               </div>
             </Link>
@@ -174,6 +179,7 @@ export default async function Home({ searchParams }: HomeProps) {
               </div>
               <div className="card-body">
                 <h3>{item.title}</h3>
+                <ContentCardMetrics views={item.providerViewCount || item.viewCount} rating={item.rating} episodes={item.episodeCount} />
                 <div className="meta">{item.providerName}<span className="dot" />{item.type}</div>
               </div>
             </Link>

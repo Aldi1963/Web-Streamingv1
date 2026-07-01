@@ -3,11 +3,12 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { clipku } from "@/services/clipku-api-service";
-import { ArrowLeft, RotateCcw } from "lucide-react";
+import { ArrowLeft, LockKeyhole, RotateCcw } from "lucide-react";
 import { WatchPlayer } from "@/components/watch-player";
 import { EpisodePopup } from "@/components/episode-popup";
 import { episodesWithFallback } from "@/lib/episodes";
 import { WatchTools } from "@/components/watch-tools";
+import { playbackAccess, FREE_EPISODE_LIMIT } from "@/services/playback-access-service";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +31,17 @@ export default async function Watch({
     include: { episodes: { orderBy: { episodeNumber: "asc" } } },
   });
   if (!content) return <main className="shell"><h1>Konten tidak ditemukan</h1></main>;
+  const access = await playbackAccess(user.id, epNum);
+  if (!access.allowed) return <main className="watch-fullscreen">
+    <div className="watch-topbar"><Link href={`/drama/${content.slug}`} className="btn btn-ghost btn-sm"><ArrowLeft size={18}/> Kembali</Link><span className="watch-title">{content.title}</span></div>
+    <section className="watch-paywall panel">
+      <span className="watch-paywall-icon"><LockKeyhole size={34}/></span>
+      <p className="eyebrow">Episode premium</p>
+      <h1>Lanjutkan menonton episode {epNum}</h1>
+      <p>Episode 1–{FREE_EPISODE_LIMIT} gratis untuk semua akun. Aktifkan paket untuk membuka seluruh episode selama masa paket berlaku.</p>
+      <Link href="/plans" className="btn">Lihat paket akses</Link>
+    </section>
+  </main>;
   const preference = await db.userPreference.findUnique({ where: { userId: user.id } }).catch(() => null);
   const episodes = episodesWithFallback(content.episodes, content.apiRawResponse, content.id);
   const currentIndex = episodes.findIndex(ep => ep.episodeNumber === epNum);

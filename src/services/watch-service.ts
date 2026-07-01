@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { clipku } from "./clipku-api-service";
+import { playbackAccess } from "./playback-access-service";
 
 function streamValue(data: unknown, keys: string[]): string | undefined {
   if (!data || typeof data !== "object") return undefined;
@@ -27,18 +28,15 @@ function streamValue(data: unknown, keys: string[]): string | undefined {
 
 export class WatchService {
   async authorize(userId: string, contentId: string, episode = 1) {
-    const subscription = await db.subscription.findFirst({
-      where: { userId, status: { in: ["ACTIVE", "TRIAL", "GRACE"] }, expiresAt: { gt: new Date() } },
-      include: { plan: true }
-    });
-    if (!subscription) throw new Error("Langganan aktif diperlukan untuk menonton.");
+    const access = await playbackAccess(userId, episode);
+    if (!access.allowed) throw new Error("Episode 9 dan seterusnya memerlukan paket aktif.");
     const content = await db.content.findUniqueOrThrow({ where: { id: contentId } });
     let response: unknown;
     try { response = await clipku.getStreamV2(content.providerSlug, content.clipkuContentId, episode); }
     catch { response = await clipku.getStream(content.providerSlug, content.clipkuContentId, episode); }
     const url = streamValue(response, ["hls_url", "video_url", "url", "data.hls_url", "data.video_url", "data.url", "result.url"]);
     if (!url) throw new Error("Playback URL belum ditemukan.");
-    return { url, type: url.includes(".m3u8") ? "hls" : "mp4", expiresIn: 300 };
+    return { url, type: url.includes(".m3u8") ? "hls" : "mp4", expiresIn: 300, access };
   }
 }
 export const watchService = new WatchService();

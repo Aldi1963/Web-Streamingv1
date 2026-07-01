@@ -25,8 +25,8 @@ export function rateLimit(opts: {
   const keyFn =
     opts.keyFn ??
     ((req: Request) =>
-      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
       req.headers.get("x-real-ip") ??
+      req.headers.get("x-forwarded-for")?.split(",").at(-1)?.trim() ??
       "unknown");
 
   return async function check(req: Request) {

@@ -3,7 +3,8 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { apiError } from "@/lib/http";
 import { authRateLimit } from "@/lib/rate-limit";
-import { randomBytes } from "crypto";
+import { createResetToken } from "@/lib/password-reset";
+import { sendPasswordResetEmail } from "@/services/mail-service";
 
 const schema = z.object({ email: z.string().email() });
 
@@ -17,21 +18,15 @@ export async function POST(request: Request) {
     // Always return success to prevent email enumeration
     const user = await db.user.findUnique({ where: { email } });
     if (user) {
-      const token = randomBytes(32).toString("hex");
-      const expiresAt = new Date(Date.now() + 3600_000); // 1 hour
+      const { token, tokenHash, expiresAt } = createResetToken();
 
       await db.user.update({
         where: { id: user.id },
-        data: { rememberToken: token },
+        data: { rememberToken: tokenHash, rememberTokenExpiresAt: expiresAt },
       });
 
-      // TODO: Send email with reset link
-      // const resetUrl = `${process.env.APP_URL}/reset-password?token=${token}`;
-      // await sendEmail(email, "Reset Password Clipku", `Klik link: ${resetUrl}`);
-
-      console.log(
-        `[PASSWORD RESET] Token for ${email}: ${token} (expires ${expiresAt.toISOString()})`
-      );
+      const appUrl = process.env.APP_URL ?? new URL(request.url).origin;
+      await sendPasswordResetEmail(email, `${appUrl}/reset-password?token=${encodeURIComponent(token)}`);
     }
 
     return NextResponse.json({

@@ -1,4 +1,4 @@
-const CACHE = "clipku-static-v1";
+const CACHE = "clipku-static-v2";
 
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", event => {

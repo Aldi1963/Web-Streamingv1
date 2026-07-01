@@ -59,6 +59,19 @@ function browserCompatiblePoster(url: string) {
   return url;
 }
 
+function metricNumber(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) return Math.max(0, Math.round(value));
+  if (typeof value !== "string") return 0;
+  const normalized = value.trim().toUpperCase().replaceAll(",", ".");
+  const number = Number.parseFloat(normalized.replace(/[^\d.]/g, ""));
+  if (!Number.isFinite(number)) return 0;
+  const multiplier = normalized.includes("B") ? 1_000_000_000
+    : normalized.includes("M") ? 1_000_000
+      : normalized.includes("K") ? 1_000
+        : 1;
+  return Math.max(0, Math.round(number * multiplier));
+}
+
 async function withRetry<T>(operation: () => Promise<T>, attempts = 3): Promise<T> {
   let lastError: unknown;
   for (let attempt = 1; attempt <= attempts; attempt++) {
@@ -188,6 +201,10 @@ export class ContentService {
         const title = contentTitle(item)!;
         const poster = contentPoster(item) ?? `/provider-logos/${providerSlug}.jpg`;
         const episodeCount = Number(contentText(item, "episode_count", "episodeCount", "episodes_count", "total_episode", "totalEpisodes") ?? 0);
+        const providerViewCount = metricNumber(
+          contentText(item, "watch_value", "watchValue", "view_count", "viewCount", "views", "play_count", "playCount"),
+        );
+        const rating = Number(contentText(item, "rating", "score", "rate", "imdbRatingValue") ?? 0) || null;
         await db.content.upsert({
           where: { providerSlug_clipkuContentId: { providerSlug, clipkuContentId: remoteId } },
           create: {
@@ -198,6 +215,7 @@ export class ContentService {
             category: Array.isArray(item.tags) ? item.tags.join(", ") : contentText(item, "category"),
             genre: Array.isArray(item.tags) ? item.tags : [],
             language: contentText(item, "language", "lang"),
+            ...(rating ? { rating } : {}), providerViewCount, episodeCount,
             type: endpoint.providerType === "Movie" ? "movie" : "short-drama",
             apiRawResponse: { ...item, synced_episode_count: episodeCount }, isPremium: true,
           },
@@ -207,6 +225,7 @@ export class ContentService {
             category: Array.isArray(item.tags) ? item.tags.join(", ") : contentText(item, "category"),
             genre: Array.isArray(item.tags) ? item.tags : [],
             language: contentText(item, "language", "lang"),
+            ...(rating ? { rating } : {}), providerViewCount, episodeCount,
             apiRawResponse: { ...item, synced_episode_count: episodeCount },
             isActive: true, lastSyncedAt: new Date(),
           },
