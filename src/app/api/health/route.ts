@@ -32,9 +32,9 @@ export async function GET() {
 
   try {
     const [ok, degraded, failed, stale] = await Promise.all([
-      db.content.count({ where: { playbackStatus: "OK" } }),
-      db.content.count({ where: { playbackStatus: "DEGRADED" } }),
-      db.content.count({ where: { playbackStatus: "FAILED" } }),
+      db.content.count({ where: { isActive: true, playbackStatus: "OK" } }),
+      db.content.count({ where: { isActive: true, playbackStatus: "DEGRADED" } }),
+      db.content.count({ where: { isActive: true, playbackStatus: "FAILED" } }),
       db.content.count({
         where: {
           isActive: true,
