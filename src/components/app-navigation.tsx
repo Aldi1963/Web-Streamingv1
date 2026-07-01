@@ -6,13 +6,13 @@ import { Film, Flame, Globe, Home, Menu, Search, Settings, Shield, Tv, User, X }
 import { useEffect, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 
-type NavItem = { href: string; label: string; Icon: LucideIcon };
+type NavItem = { href: string; label: string; Icon: LucideIcon; mobileLabel?: string };
 
 const items = [
   { href: "/", label: "Home", Icon: Home },
   { href: "/browse", label: "Browse", Icon: Search },
   { href: "/popular", label: "Populer", Icon: Flame },
-  { href: "/short-drama", label: "Short Drama", Icon: Tv },
+  { href: "/short-drama", label: "Short Drama", mobileLabel: "Drama", Icon: Tv },
   { href: "/movies", label: "Movie", Icon: Film },
   { href: "/drakor", label: "Drakor", Icon: Globe },
 ];
@@ -38,7 +38,7 @@ const adminItems = [
   { href: "/admin/reports", label: "Laporan Video", Icon: Flame },
   { href: "/admin/contents", label: "Konten", Icon: Film },
   { href: "/admin/providers", label: "Provider", Icon: Globe },
-  { href: "/admin/plans", label: "Paket", Icon: Shield },
+  { href: "/admin/monetization", label: "Monetisasi", Icon: Shield },
   { href: "/admin/api-clipku", label: "API Clipku", Icon: Globe },
   { href: "/admin/settings", label: "Pengaturan Web", Icon: Settings },
   { href: "/admin/seo", label: "SEO", Icon: Search },
@@ -79,7 +79,7 @@ function groupName(pathname: string, href: string) {
   if (pathname.startsWith("/admin")) {
     if (href === "/admin/dashboard") return "Ringkasan";
     if (/\/(users|devices)$/.test(href)) return "Pengguna & akses";
-    if (/\/(subscriptions|payments|plans)$/.test(href)) return "Monetisasi";
+    if (/\/(subscriptions|payments|plans|monetization)$/.test(href)) return "Monetisasi";
     if (/\/(contents|providers|reports)$/.test(href)) return "Konten";
     if (href.includes("/api-clipku")) return "Integrasi API";
     if (/\/(settings|seo|payment-settings)$/.test(href)) return "Konfigurasi";
@@ -154,6 +154,27 @@ export function MobileMenu({ loggedIn, role }: { loggedIn: boolean; role?: strin
       </aside>
     </div>}
   </>;
+}
+
+export function BottomNavigation({ loggedIn }: { loggedIn: boolean }) {
+  const pathname = usePathname();
+  const visible: NavItem[] = [items[0], items[1], items[2], items[4]];
+  return <nav className="bottom-nav" aria-label="Navigasi mobile">
+    {visible.map(({ href, label, mobileLabel, Icon }) => <Link
+      key={href}
+      href={href}
+      className={`bottom-nav-item${active(pathname, href, items) ? " active" : ""}`}
+      aria-current={active(pathname, href, items) ? "page" : undefined}
+    >
+      <Icon size={20} /><span>{mobileLabel ?? label}</span>
+    </Link>)}
+    <Link
+      href={loggedIn ? "/dashboard" : "/login"}
+      className={`bottom-nav-item${pathname.startsWith("/dashboard") || pathname === "/login" ? " active" : ""}`}
+    >
+      <User size={20} /><span>Akun</span>
+    </Link>
+  </nav>;
 }
 
 export function SearchForm({ compact = false }: { compact?: boolean }) {

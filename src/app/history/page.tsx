@@ -1,36 +1,17 @@
 import { redirect } from "next/navigation";
-import { WatchProgressGrid } from "@/components/watch-progress-grid";
-import { db } from "@/lib/db";
 import { auth } from "@/services/auth-service";
-
-export const dynamic = "force-dynamic";
+import { db } from "@/lib/db";
+import { WatchProgressGrid } from "@/components/watch-progress-grid";
 
 export default async function HistoryPage() {
-  const user = await auth.currentUser();
-  if (!user) redirect("/login?next=/history");
-
-  const items = await db.watchProgress.findMany({
-    where: { userId: user.id },
-    include: {
-      content: {
-        include: {
-          episodes: {
-            select: { id: true, episodeNumber: true },
-          },
-        },
-      },
-    },
-    orderBy: { lastWatchedAt: "desc" },
+  const user = await auth.currentUser(); if (!user) redirect("/login");
+  const rows = await db.watchProgress.findMany({
+    where: { userId: user.id }, include: { content: { include: { episodes: { select: { id: true, episodeNumber: true } } } } },
+    orderBy: { lastWatchedAt: "desc" }, take: 20,
   });
-
-  return (
-    <main className="shell">
-      <WatchProgressGrid
-        title="Riwayat tontonan"
-        items={items}
-        emptyLabel="Belum ada riwayat tontonan"
-        emptyText="Drama dan film yang Anda tonton akan muncul di sini."
-      />
-    </main>
-  );
+  const items = Array.from(new Map(rows.map(row => [row.contentId, row])).values());
+  const latestItems = items.slice(0, 1);
+  return <main className="shell"><div className="section-header"><h1>Riwayat Tonton</h1></div>
+    <WatchProgressGrid title="Terakhir ditonton" items={latestItems} emptyLabel="Riwayat kosong" emptyText="Video yang ditonton akan muncul di sini." />
+  </main>;
 }

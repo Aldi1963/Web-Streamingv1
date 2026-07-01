@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, CreditCard, Database, ExternalLink, Film, Home, Menu, Settings, ShieldCheck, Users, X } from "lucide-react";
+import { Activity, CreditCard, Database, FileText, Film, Home, Menu, Settings, Shield, Users, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { ReactNode, useEffect, useState } from "react";
 
@@ -13,20 +13,31 @@ const groups: AdminGroup[] = [
     ["/admin/dashboard", "Ringkasan", Home],
     ["/admin/reports", "Laporan video", Activity],
   ] },
-  { label: "Manajemen", restricted: true, items: [
-    ["/admin/users", "Pengguna", Users],
-    ["/admin/monetization", "Monetisasi", CreditCard],
+  { label: "Pengguna", restricted: true, items: [
+    ["/admin/users", "Akun pengguna", Users],
+    ["/admin/devices", "Perangkat", Shield],
   ] },
-  { label: "Konten & sistem", items: [
-    ["/admin/catalog", "Katalog", Film],
-    ["/admin/integrations", "Integrasi", Database],
+  { label: "Monetisasi", restricted: true, items: [
+    ["/admin/subscriptions", "Langganan", CreditCard],
+    ["/admin/payments", "Pembayaran", CreditCard],
+    ["/admin/monetization", "Paket", FileText],
+  ] },
+  { label: "Katalog", items: [
+    ["/admin/contents", "Konten", Film],
+    ["/admin/providers", "Provider", Database],
+  ] },
+  { label: "Integrasi", items: [
+    ["/admin/api-clipku", "Integrasi API", Database],
   ] },
   { label: "Sistem", restricted: true, items: [
-    ["/admin/settings", "Pengaturan", Settings],
+    ["/admin/settings", "Pengaturan web", Settings],
+    ["/admin/seo", "SEO", Settings],
+    ["/admin/payment-settings", "Payment gateway", CreditCard],
+    ["/admin/error-logs", "Monitoring & log", Activity],
   ] },
 ];
 
-export function AdminLayout({ role, title, children }: { role: string; title: string; children: ReactNode }) {
+export function AdminLayout({ role, title, subtitle, children }: { role: string; title: string; subtitle?: string; children: ReactNode }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const contentManager = role === "CONTENT_MANAGER";
@@ -38,23 +49,24 @@ export function AdminLayout({ role, title, children }: { role: string; title: st
   return <div className="admin-portal">
     {open && <button className="admin-backdrop" aria-label="Tutup menu admin" onClick={() => setOpen(false)} />}
     <aside className={`admin-portal-sidebar${open ? " open" : ""}`}>
-      <div className="admin-portal-brand"><Link href="/admin/dashboard"><span className="admin-brand-mark">C+</span><span className="admin-brand-copy"><strong>CLIPKU</strong><small>CONTROL CENTER</small></span></Link><button onClick={() => setOpen(false)} aria-label="Tutup sidebar"><X size={20}/></button></div>
+      <div className="admin-portal-brand"><Link href="/admin/dashboard">CLIPKU <span>ADMIN</span></Link><button onClick={() => setOpen(false)} aria-label="Tutup sidebar"><X size={20}/></button></div>
       <nav aria-label="Navigasi Control Center">
         {visibleGroups.map(group => <div className="admin-nav-group" key={group.label}>
           <span>{group.label}</span>
           {group.items.map(([href,label,Icon]) => <Link key={href} href={href} className={activeHref === href ? "active" : ""}><Icon size={18}/>{label}</Link>)}
         </div>)}
       </nav>
-      <div className="admin-portal-footer">
-        <div className="admin-role"><ShieldCheck size={17}/><span><small>Akses aktif</small><strong>{role.replaceAll("_"," ")}</strong></span></div>
-        <Link href="/dashboard">Kembali ke akun</Link>
-      </div>
+      <div className="admin-portal-footer"><Link href="/dashboard">Kembali ke akun</Link><small>{role.replaceAll("_"," ")}</small></div>
     </aside>
     <div className="admin-portal-main">
       <header className="admin-portal-header">
         <button className="admin-menu-button" onClick={() => setOpen(true)} aria-label="Buka menu admin"><Menu size={22}/></button>
-        <div><p>Control Center</p><h1>{title}</h1></div>
-        <Link className="btn btn-secondary btn-sm admin-view-site" href="/"><ExternalLink size={15}/>Lihat situs</Link>
+        <div className="admin-portal-title">
+          <p>Control Center</p>
+          <h1>{title}</h1>
+          {subtitle && <span>{subtitle}</span>}
+        </div>
+        <Link className="btn btn-secondary btn-sm" href="/">Lihat situs</Link>
       </header>
       <div className="admin-portal-content">{children}</div>
     </div>

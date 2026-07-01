@@ -83,6 +83,14 @@ export function WatchProgressGrid({
           const href = episode ? `/watch/${item.contentId}?ep=${episode.episodeNumber}` : `/watch/${item.contentId}`;
           const percent = progressPercent(item.positionSeconds, item.durationSeconds);
           const completed = isProgressCompleted(item.positionSeconds, item.durationSeconds);
+          const totalEpisodes = item.content.episodes?.length ?? 0;
+          const episodeLabel = episode
+            ? totalEpisodes > 0
+              ? `Ep ${episode.episodeNumber}/${totalEpisodes}`
+              : `Ep ${episode.episodeNumber}`
+            : totalEpisodes > 0
+              ? `${totalEpisodes} episode`
+              : "Lanjut";
           return (
             <Link href={href} className="card progress-card" key={item.id} prefetch={false}>
               <div className="card-poster">
@@ -94,7 +102,7 @@ export function WatchProgressGrid({
                   </div>
                 )}
                 <span className="card-badge-rating progress-badge">
-                  {episode ? `Ep ${episode.episodeNumber}` : "Lanjut"}
+                  {episodeLabel}
                 </span>
                 <span className={`progress-state${completed ? " completed" : ""}`}>
                   {completed ? "Selesai" : "Lanjut"}
