@@ -5,6 +5,19 @@ import { db } from "@/lib/db";
 import { createHash } from "crypto";
 
 const secret = new TextEncoder().encode(process.env.AUTH_SECRET ?? "development-secret-change-this-now-32");
+const SESSION_COOKIE = "clipku_session";
+const SESSION_MAX_AGE = 7 * 24 * 60 * 60;
+
+function sessionCookieOptions(maxAge = SESSION_MAX_AGE) {
+  return {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax" as const,
+    maxAge,
+    path: "/",
+    priority: "high" as const,
+  };
+}
 
 export class AuthService {
   async register(name: string, email: string, password: string) {
@@ -28,11 +41,11 @@ export class AuthService {
         expiresAt: new Date(Date.now() + 7 * 86_400_000),
       },
     });
-    (await cookies()).set("clipku_session", token, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", maxAge: 604800, path: "/" });
+    (await cookies()).set(SESSION_COOKIE, token, sessionCookieOptions());
     return { id: user.id, name: user.name, email: user.email, role: user.role };
   }
   async currentUser() {
-    const token = (await cookies()).get("clipku_session")?.value;
+    const token = (await cookies()).get(SESSION_COOKIE)?.value;
     if (!token) return null;
     try {
       const { payload } = await jwtVerify(token, secret);
@@ -46,12 +59,15 @@ export class AuthService {
   }
   async logout() {
     const store = await cookies();
-    const token = store.get("clipku_session")?.value;
+    const token = store.get(SESSION_COOKIE)?.value;
     if (token) {
       const tokenHash = createHash("sha256").update(token).digest("hex");
       await db.deviceSession.deleteMany({ where: { tokenHash } });
     }
-    store.delete("clipku_session");
+    store.set(SESSION_COOKIE, "", {
+      ...sessionCookieOptions(0),
+      expires: new Date(0),
+    });
   }
 }
 export const auth = new AuthService();
