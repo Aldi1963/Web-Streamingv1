@@ -23,9 +23,11 @@ function findPoster(value: unknown, depth = 0): string | null {
 }
 
 async function main() {
+  const provider = process.env.PROVIDER?.trim();
   const items = await db.content.findMany({
     where: {
       isActive: true,
+      ...(provider ? { providerSlug: provider } : {}),
       OR: [
         { posterUrl: null },
         { posterUrl: { startsWith: "/provider-logos/" } },

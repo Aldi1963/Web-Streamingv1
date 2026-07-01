@@ -34,7 +34,7 @@ function contentPoster(item: RemoteContent) {
   const direct = contentText(
     item,
     "thumb_url", "thumbUrl", "poster_url", "posterUrl",
-    "cover", "poster", "image", "coverUrl", "bookCover",
+    "cover", "poster", "image", "coverUrl", "bookCover", "coverWap",
   );
   if (direct) return browserCompatiblePoster(direct);
 
@@ -198,35 +198,68 @@ export class ContentService {
     let failed = 0;
     for (const [remoteId, item] of unique) {
       try {
-        const title = contentTitle(item)!;
-        const poster = contentPoster(item) ?? `/provider-logos/${providerSlug}.jpg`;
-        const episodeCount = Number(contentText(item, "episode_count", "episodeCount", "episodes_count", "total_episode", "totalEpisodes", "totalEpisode", "episodeTotal", "chapterCount", "chapter_count") ?? 0);
+        let metadata = item;
+        if (providerSlug === "dramabox") {
+          try {
+            const detailResponse = await withRetry(() => clipku.getDetail(providerSlug, remoteId), 2);
+            const detail = detailResponse && typeof detailResponse === "object"
+              ? (detailResponse as RemoteContent).data
+              : null;
+            if (detail && typeof detail === "object" && !Array.isArray(detail)) {
+              const detailData = detail as RemoteContent;
+              const ratingConf = detailData.ratingConf;
+              const rankVo = item.rankVo;
+              metadata = {
+                ...item,
+                ...detailData,
+                rating: ratingConf && typeof ratingConf === "object" && !Array.isArray(ratingConf)
+                  ? contentText(ratingConf as RemoteContent, "rate")
+                  : undefined,
+                viewCount: contentText(detailData, "playCount")
+                  ?? (rankVo && typeof rankVo === "object" && !Array.isArray(rankVo)
+                    ? contentText(rankVo as RemoteContent, "hotCode")
+                    : undefined),
+              };
+            }
+          } catch {
+            const rankVo = item.rankVo;
+            metadata = {
+              ...item,
+              viewCount: rankVo && typeof rankVo === "object" && !Array.isArray(rankVo)
+                ? contentText(rankVo as RemoteContent, "hotCode")
+                : undefined,
+            };
+          }
+        }
+        const title = contentTitle(metadata)!;
+        const poster = contentPoster(metadata) ?? `/provider-logos/${providerSlug}.jpg`;
+        const episodeCount = Number(contentText(metadata, "episode_count", "episodeCount", "episodes_count", "total_episode", "totalEpisodes", "totalEpisode", "episodeTotal", "chapterCount", "chapter_count") ?? 0);
         const providerViewCount = metricNumber(
-          contentText(item, "watch_value", "watchValue", "view_count", "viewCount", "views", "viewers", "play_count", "playCount", "hotValue", "heat"),
+          contentText(metadata, "watch_value", "watchValue", "view_count", "viewCount", "views", "viewers", "play_count", "playCount", "hotValue", "heat"),
         );
-        const rating = Number(contentText(item, "rating", "score", "imdbRatingValue", "imdbRate", "rate") ?? 0) || null;
+        const rating = Number(contentText(metadata, "rating", "score", "imdbRatingValue", "imdbRate", "rate") ?? 0) || null;
         await db.content.upsert({
           where: { providerSlug_clipkuContentId: { providerSlug, clipkuContentId: remoteId } },
           create: {
             providerName: endpoint.providerName, providerSlug, clipkuContentId: remoteId,
             title, slug: slugify(title, providerSlug, remoteId),
-            description: contentText(item, "description", "intro", "summary", "desc"),
+            description: contentText(metadata, "description", "introduction", "intro", "summary", "desc"),
             posterUrl: poster, thumbnailUrl: poster,
-            category: Array.isArray(item.tags) ? item.tags.join(", ") : contentText(item, "category"),
-            genre: Array.isArray(item.tags) ? item.tags : [],
-            language: contentText(item, "language", "lang"),
+            category: Array.isArray(metadata.tags) ? metadata.tags.join(", ") : contentText(metadata, "category"),
+            genre: Array.isArray(metadata.tags) ? metadata.tags : [],
+            language: contentText(metadata, "language", "lang"),
             ...(rating ? { rating } : {}), providerViewCount, episodeCount,
             type: endpoint.providerType === "Movie" ? "movie" : "short-drama",
-            apiRawResponse: { ...item, synced_episode_count: episodeCount }, isPremium: true,
+            apiRawResponse: { ...metadata, synced_episode_count: episodeCount }, isPremium: true,
           },
           update: {
-            title, description: contentText(item, "description", "intro", "summary", "desc"),
+            title, description: contentText(metadata, "description", "introduction", "intro", "summary", "desc"),
             posterUrl: poster, thumbnailUrl: poster,
-            category: Array.isArray(item.tags) ? item.tags.join(", ") : contentText(item, "category"),
-            genre: Array.isArray(item.tags) ? item.tags : [],
-            language: contentText(item, "language", "lang"),
+            category: Array.isArray(metadata.tags) ? metadata.tags.join(", ") : contentText(metadata, "category"),
+            genre: Array.isArray(metadata.tags) ? metadata.tags : [],
+            language: contentText(metadata, "language", "lang"),
             ...(rating ? { rating } : {}), providerViewCount, episodeCount,
-            apiRawResponse: { ...item, synced_episode_count: episodeCount },
+            apiRawResponse: { ...metadata, synced_episode_count: episodeCount },
             isActive: true, lastSyncedAt: new Date(),
           },
         });

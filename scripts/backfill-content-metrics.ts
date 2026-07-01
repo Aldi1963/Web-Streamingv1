@@ -31,24 +31,29 @@ function objectRecord(value: unknown): Record<string, unknown> {
 }
 
 function metrics(raw: Record<string, unknown>) {
+  const rankVo = objectRecord(raw.rankVo);
+  const ratingConf = objectRecord(raw.ratingConf);
   return {
     views: metricNumber(first(raw, [
       "watch_value", "watchValue", "view_count", "viewCount", "views", "viewers",
       "play_count", "playCount", "hotValue", "heat",
-    ])),
+    ]) ?? first(rankVo, ["hotCode", "hotValue"])),
     episodes: metricNumber(first(raw, [
       "episode_count", "episodeCount", "episodes_count", "total_episode", "totalEpisodes",
       "totalEpisode", "episodeTotal", "chapterCount", "chapter_count", "synced_episode_count",
     ])),
-    rating: Number(first(raw, ["rating", "score", "imdbRatingValue", "imdbRate", "rate"]) ?? 0),
+    rating: Number(first(raw, ["rating", "score", "imdbRatingValue", "imdbRate", "rate"])
+      ?? first(ratingConf, ["rate", "score"]) ?? 0),
   };
 }
 
 async function main() {
+  const provider = process.env.PROVIDER?.trim();
   const items = await db.content.findMany({
+    where: provider ? { providerSlug: provider } : undefined,
     select: {
       id: true, providerSlug: true, clipkuContentId: true, apiRawResponse: true,
-      providerViewCount: true, episodeCount: true,
+      providerViewCount: true, episodeCount: true, rating: true,
       _count: { select: { episodes: true } },
     },
   });
@@ -58,7 +63,7 @@ async function main() {
     await Promise.all(items.slice(offset, offset + 10).map(async (item) => {
       const catalog = metrics(objectRecord(item.apiRawResponse));
       let detail = { views: 0, episodes: 0, rating: 0 };
-      if ((!catalog.views || !catalog.episodes) && item.clipkuContentId) {
+      if ((!catalog.views || !catalog.episodes || (!catalog.rating && !item.rating)) && item.clipkuContentId) {
         try {
           detail = metrics(objectRecord(await clipku.getDetail(item.providerSlug, item.clipkuContentId)));
           enriched++;
