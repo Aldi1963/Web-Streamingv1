@@ -34,7 +34,7 @@ function contentPoster(item: RemoteContent) {
   const direct = contentText(
     item,
     "thumb_url", "thumbUrl", "poster_url", "posterUrl",
-    "cover", "poster", "image", "coverUrl",
+    "cover", "poster", "image", "coverUrl", "bookCover",
   );
   if (direct) return browserCompatiblePoster(direct);
 

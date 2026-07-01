@@ -144,7 +144,10 @@ export class ClipkuApiService {
   async getLatest(provider: string, page = 1) { return this.request(`/${provider}/new`, { page }); }
   async getPopular(provider: string, page = 1) { return this.request(`/${provider}/populer`, { page }); }
   async search(provider: string, keyword: string) { return this.request(`/${provider}/search`, { q: keyword }); }
-  async getDetail(provider: string, id: string) { return this.request(`/${provider}/detail`, { id }); }
+  async getDetail(provider: string, id: string) {
+    const params = provider === "dramabox" ? { bookId: id } : { id };
+    return this.request(`/${provider}/detail`, params);
+  }
   async getStream(provider: string, id: string, ep = 1) {
     if (provider === "moviebox") {
       const detail = await this.getDetail(provider, id);
