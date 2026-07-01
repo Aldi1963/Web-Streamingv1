@@ -11,7 +11,6 @@ type NavItem = { href: string; label: string; Icon: LucideIcon };
 const items = [
   { href: "/", label: "Home", Icon: Home },
   { href: "/browse", label: "Browse", Icon: Search },
-  { href: "/popular", label: "Populer", Icon: Flame },
   { href: "/short-drama", label: "Short Drama", Icon: Tv },
   { href: "/movies", label: "Movie", Icon: Film },
   { href: "/drakor", label: "Drakor", Icon: Globe },
