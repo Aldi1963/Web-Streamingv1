@@ -3,9 +3,10 @@ import { db } from "@/lib/db";
 import { Filter, Play, Star } from "lucide-react";
 import { ProviderModal } from "@/components/provider-modal";
 import { ContentCardMetrics } from "@/components/content-card-metrics";
+import { OptimizedImage } from "@/components/optimized-image";
 
 export const dynamic = "force-dynamic";
-const PER_PAGE = 24;
+const PER_PAGE = 18;
 
 type BrowseParams = {
   q?: string; page?: string; provider?: string; year?: string; type?: string; sort?: string;
@@ -82,9 +83,9 @@ export default async function Browse({ searchParams }: { searchParams: Promise<B
     </form>
     <p className="muted result-summary">{total} konten{q && <> untuk “{q}”</>}{provider && <> dari {providers.find(p=>p.providerSlug===provider)?.providerName}</>}</p>
 
-    {items.length ? <div className="grid">{items.map(item => (
+    {items.length ? <div className="grid">{items.map((item, index) => (
       <Link href={`/drama/${item.slug}`} className="card" key={item.id} prefetch={false}>
-        <div className="card-poster">{item.posterUrl ? <img src={item.posterUrl} alt={item.title} loading="lazy" decoding="async" /> : <div className="placeholder"><span><Play size={30} /></span></div>}{item.rating && <span className="card-badge-rating"><Star size={10} fill="currentColor" /> {item.rating}</span>}</div>
+        <div className="card-poster">{item.posterUrl ? <OptimizedImage src={item.posterUrl} alt={item.title} priority={index < 3} /> : <div className="placeholder"><span><Play size={30} /></span></div>}{item.rating && <span className="card-badge-rating"><Star size={10} fill="currentColor" /> {item.rating}</span>}</div>
         <div className="card-body"><h3>{item.title}</h3><ContentCardMetrics views={item.providerViewCount || item.viewCount} rating={item.rating} episodes={item.episodeCount} /><div className="meta">{item.providerName}<span className="dot" />{item.type}</div></div>
       </Link>
     ))}</div> : <div style={{ textAlign: "center", padding: 60, color: "var(--muted)" }}><p style={{ fontSize: "1.2rem" }}>Tidak ada konten.</p>{(q || provider) && <Link href="/browse" className="btn" style={{ marginTop: 16 }}>Reset Filter</Link>}</div>}

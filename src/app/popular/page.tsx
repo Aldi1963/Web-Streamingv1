@@ -3,10 +3,11 @@ import { Flame, Play, Star } from "lucide-react";
 import { db } from "@/lib/db";
 import { PopularFilters } from "@/components/popular-filters";
 import { ContentCardMetrics } from "@/components/content-card-metrics";
+import { OptimizedImage } from "@/components/optimized-image";
 
 export const dynamic = "force-dynamic";
 
-const PER_PAGE = 24;
+const PER_PAGE = 18;
 
 type PopularParams = {
   provider?: string;
@@ -125,11 +126,11 @@ export default async function PopularPage({
 
       {items.length ? (
         <div className="grid">
-          {items.map((item) => (
+          {items.map((item, index) => (
             <Link href={`/drama/${item.slug}`} className="card" key={item.id} prefetch={false}>
               <div className="card-poster">
                 {item.posterUrl ? (
-                  <img src={item.posterUrl} alt={item.title} loading="lazy" />
+                  <OptimizedImage src={item.posterUrl} alt={item.title} priority={index < 3} />
                 ) : (
                   <div className="placeholder"><span><Play size={30} /></span></div>
                 )}

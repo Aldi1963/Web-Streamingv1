@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Play } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ContentCardMetrics } from "@/components/content-card-metrics";
+import { OptimizedImage } from "@/components/optimized-image";
 
 type ContentItem = {
   id: string;
@@ -41,7 +42,7 @@ export function InfiniteContentGrid({
       const params = new URLSearchParams({
         provider,
         paginate: "1",
-        limit: "24",
+        limit: "18",
         cursor,
       });
       const response = await fetch(`/api/contents?${params}`, { cache: "no-store" });
@@ -74,7 +75,7 @@ export function InfiniteContentGrid({
       {items.map(item => <Link href={`/drama/${item.slug}`} className="card" key={item.id} prefetch={false}>
         <div className="card-poster">
           {item.posterUrl
-            ? <img src={item.posterUrl} alt={item.title} loading="lazy" decoding="async" />
+            ? <OptimizedImage src={item.posterUrl} alt={item.title} />
             : <div className="placeholder"><span><Play size={30} /></span></div>}
         </div>
         <div className="card-body">

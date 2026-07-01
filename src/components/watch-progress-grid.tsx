@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Play, Star } from "lucide-react";
 import { isProgressCompleted } from "@/lib/watch-progress";
+import { OptimizedImage } from "@/components/optimized-image";
 
 type ProgressContent = {
   id: string;
@@ -87,7 +88,7 @@ export function WatchProgressGrid({
             <Link href={href} className="card progress-card" key={item.id} prefetch={false}>
               <div className="card-poster">
                 {item.content.posterUrl ? (
-                  <img src={item.content.posterUrl} alt={item.content.title} loading="lazy" />
+                  <OptimizedImage src={item.content.posterUrl} alt={item.content.title} />
                 ) : (
                   <div className="placeholder">
                     <span><Play size={30} /></span>

@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { InfiniteContentGrid } from "@/components/infinite-content-grid";
 
 export const revalidate = 60;
-const PAGE_SIZE = 24;
+const PAGE_SIZE = 18;
 
 export default async function Provider({
   params,

@@ -8,6 +8,7 @@ import { auth } from "@/services/auth-service";
 import { ContentGrid } from "@/components/content-grid";
 import { episodesWithFallback } from "@/lib/episodes";
 import { isProgressCompleted } from "@/lib/watch-progress";
+import { OptimizedImage } from "@/components/optimized-image";
 
 export const dynamic = "force-dynamic";
 
@@ -64,7 +65,7 @@ export default async function DramaDetail({
       {/* Banner */}
       {bannerUrl && (
         <div className="drama-banner">
-          <img src={bannerUrl} alt={item.title} />
+          <OptimizedImage src={bannerUrl} alt="" width={1280} height={720} sizes="100vw" quality={65} priority />
           <div className="drama-banner-overlay" />
         </div>
       )}
@@ -74,7 +75,7 @@ export default async function DramaDetail({
         {/* Poster */}
         <div className="drama-poster">
           {item.posterUrl ? (
-            <img src={item.posterUrl} alt={item.title} />
+            <OptimizedImage src={item.posterUrl} alt={item.title} width={570} height={855} sizes="(max-width: 768px) 140px, 280px" priority />
           ) : (
             <div className="placeholder"><span><Clapperboard size={40} /></span></div>
           )}

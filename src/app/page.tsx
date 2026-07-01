@@ -5,6 +5,7 @@ import { auth } from "@/services/auth-service";
 import { ProviderHeroSlider } from "@/components/provider-hero-slider";
 import { ContentCardMetrics } from "@/components/content-card-metrics";
 import { InfiniteContentGrid } from "@/components/infinite-content-grid";
+import { OptimizedImage } from "@/components/optimized-image";
 
 export const dynamic = "force-dynamic";
 
@@ -72,7 +73,7 @@ export default async function Home({ searchParams }: HomeProps) {
     db.content.findMany({
       where: contentWhere,
       select: cardSelect,
-      take: activeProvider ? 24 : 18,
+      take: 18,
       orderBy: { lastSyncedAt: "desc" },
     }).catch(() => []),
     user ? db.watchlist.findMany({
@@ -153,10 +154,10 @@ export default async function Home({ searchParams }: HomeProps) {
             initialCursor={latest.length < activeProvider._count ? latest.at(-1)?.id ?? null : null}
           />
         ) : <div className="grid">
-          {latest.map(item => (
+          {latest.map((item, index) => (
             <Link href={`/drama/${item.slug}`} className="card" key={item.id} prefetch={false}>
               <div className="card-poster">
-                {item.posterUrl ? <img src={item.posterUrl} alt={item.title} loading="lazy" decoding="async" /> : <div className="placeholder"><span><Play size={30} /></span></div>}
+                {item.posterUrl ? <OptimizedImage src={item.posterUrl} alt={item.title} priority={index < 3} /> : <div className="placeholder"><span><Play size={30} /></span></div>}
                 {item.rating && <span className="card-badge-rating"><Star size={10} fill="currentColor" /> {item.rating}</span>}
               </div>
               <div className="card-body">

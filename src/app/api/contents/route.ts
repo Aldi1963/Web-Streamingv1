@@ -20,7 +20,7 @@ export async function GET(request: Request) {
   const search = query.get("q")?.trim();
   const paginated = query.get("paginate") === "1";
   const cursor = query.get("cursor")?.trim() || undefined;
-  const limit = Math.min(Math.max(Number(query.get("limit") ?? 24), 1), 48);
+  const limit = Math.min(Math.max(Number(query.get("limit") ?? 18), 1), 48);
   const where = {
     isActive: true,
     providerSlug: provider,

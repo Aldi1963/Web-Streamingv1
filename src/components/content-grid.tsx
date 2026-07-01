@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Play } from "lucide-react";
 import { ContentCardMetrics } from "@/components/content-card-metrics";
+import { OptimizedImage } from "@/components/optimized-image";
 
 type ContentItem = {
   id: string;
@@ -51,7 +52,7 @@ export function ContentGrid({
           >
             <div className="card-poster">
               {item.posterUrl ? (
-                <img src={item.posterUrl} alt={item.title} loading="lazy" decoding="async" />
+                <OptimizedImage src={item.posterUrl} alt={item.title} />
               ) : (
                 <div className="placeholder">
                   <span><Play size={30} /></span>
