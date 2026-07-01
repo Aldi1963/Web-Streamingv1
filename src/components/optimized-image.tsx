@@ -40,7 +40,6 @@ export function OptimizedImage({
     widths.map(value => `${cdnUrl(src, value, quality, output)} ${value}w`).join(", ");
 
   return <picture className="optimized-picture">
-    {/^https?:\/\//i.test(src) && <source type="image/avif" srcSet={srcSet("avif")} sizes={sizes} />}
     {/^https?:\/\//i.test(src) && <source type="image/webp" srcSet={srcSet("webp")} sizes={sizes} />}
     <img
       src={cdnUrl(src, width, quality, "webp")}
