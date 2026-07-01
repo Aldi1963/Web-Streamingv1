@@ -9,7 +9,7 @@ import { playbackAccess } from "@/services/playback-access-service";
 
 export const dynamic = "force-dynamic";
 
-const PROXYABLE_PROVIDERS = new Set(["dramabox", "netshort"]);
+const PROXYABLE_PROVIDERS = new Set(["dramabox", "netshort", "moviebox"]);
 const INSECURE_TLS_HOSTS = new Set(["awscdn.netshort.com"]);
 
 function isAllowedVideoUrl(value: string) {
@@ -20,7 +20,9 @@ function isAllowedVideoUrl(value: string) {
         url.hostname === "dramaboxdb.com" ||
         url.hostname.endsWith(".dramaboxdb.com") ||
         url.hostname === "awscdn.netshort.com" ||
-        url.hostname.endsWith(".netshort.com")
+        url.hostname.endsWith(".netshort.com") ||
+        url.hostname === "bcdn.hakunaymatata.com" ||
+        url.hostname.endsWith(".hakunaymatata.com")
       );
   } catch {
     return false;
@@ -46,7 +48,7 @@ function extractStreamUrl(value: unknown, depth = 0): string | null {
   }
   if (typeof value === "object") {
     const record = value as Record<string, unknown>;
-    for (const key of ["play_url", "url", "stream_url", "hls_url", "filePath", "video_url", "main_url", "backup_url", "source"]) {
+    for (const key of ["play_url", "url", "stream_url", "hls_url", "filePath", "video_url", "resourceLink", "main_url", "backup_url", "source"]) {
       const item = record[key];
       if (typeof item === "string" && /^https?:\/\//i.test(item) && isAllowedVideoUrl(item)) return item;
     }
