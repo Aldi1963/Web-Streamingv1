@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
-import { Play, Star, Tv, Flame, ArrowRight, Layers3 } from "lucide-react";
+import { Play, Star, Tv, ArrowRight, Layers3 } from "lucide-react";
 import { auth } from "@/services/auth-service";
 import { ProviderHeroSlider } from "@/components/provider-hero-slider";
 import { ContentCardMetrics } from "@/components/content-card-metrics";
+import { InfiniteContentGrid } from "@/components/infinite-content-grid";
 
 export const dynamic = "force-dynamic";
 
@@ -58,7 +59,7 @@ export default async function Home({ searchParams }: HomeProps) {
     ...(activeProvider ? { providerSlug: activeProvider.providerSlug } : {}),
   };
 
-  const [featured, latest, popular, saved] = await Promise.all([
+  const [featured, latest, saved] = await Promise.all([
     db.content.findMany({
       where: { ...contentWhere, posterUrl: { not: null } },
       select: {
@@ -71,14 +72,8 @@ export default async function Home({ searchParams }: HomeProps) {
     db.content.findMany({
       where: contentWhere,
       select: cardSelect,
-      take: 18,
+      take: activeProvider ? 24 : 18,
       orderBy: { lastSyncedAt: "desc" },
-    }).catch(() => []),
-    db.content.findMany({
-      where: contentWhere,
-      select: cardSelect,
-      take: 18,
-      orderBy: [{ rating: "desc" }, { lastSyncedAt: "desc" }],
     }).catch(() => []),
     user ? db.watchlist.findMany({
       where: { userId: user.id },
@@ -151,7 +146,13 @@ export default async function Home({ searchParams }: HomeProps) {
       {/* Content Grid */}
       <section className="section">
         <div className="section-header"><h2><Tv size={22} style={{marginRight:8,verticalAlign:"middle"}} />Terbaru{activeProvider && <span className="section-provider-name"> · {activeProvider.providerName.replace(" Short Drama", "")}</span>}</h2><Link className="section-link" href={activeProvider ? `/browse?provider=${activeProvider.providerSlug}` : "/browse"} prefetch={false}>Lihat semua <ArrowRight size={16} /></Link></div>
-        <div className="grid">
+        {activeProvider ? (
+          <InfiniteContentGrid
+            provider={activeProvider.providerSlug}
+            initialItems={latest}
+            initialCursor={latest.length < activeProvider._count ? latest.at(-1)?.id ?? null : null}
+          />
+        ) : <div className="grid">
           {latest.map(item => (
             <Link href={`/drama/${item.slug}`} className="card" key={item.id} prefetch={false}>
               <div className="card-poster">
@@ -165,26 +166,7 @@ export default async function Home({ searchParams }: HomeProps) {
               </div>
             </Link>
           ))}
-        </div>
-      </section>
-
-      <section className="section">
-        <div className="section-header"><h2><Flame size={22} style={{marginRight:8,verticalAlign:"middle"}} />Populer{activeProvider && <span className="section-provider-name"> · {activeProvider.providerName.replace(" Short Drama", "")}</span>}</h2><Link className="section-link" href={activeProvider ? `/browse?provider=${activeProvider.providerSlug}` : "/browse"} prefetch={false}>Lihat semua <ArrowRight size={16} /></Link></div>
-        <div className="grid">
-          {popular.map(item => (
-            <Link href={`/drama/${item.slug}`} className="card" key={item.id} prefetch={false}>
-              <div className="card-poster">
-                {item.posterUrl ? <img src={item.posterUrl} alt={item.title} loading="lazy" decoding="async" /> : <div className="placeholder"><span><Play size={30} /></span></div>}
-                {item.rating && <span className="card-badge-rating"><Star size={10} fill="currentColor" /> {item.rating}</span>}
-              </div>
-              <div className="card-body">
-                <h3>{item.title}</h3>
-                <ContentCardMetrics views={item.providerViewCount || item.viewCount} rating={item.rating} episodes={item.episodeCount} />
-                <div className="meta">{item.providerName}<span className="dot" />{item.type}</div>
-              </div>
-            </Link>
-          ))}
-        </div>
+        </div>}
       </section>
 
       <footer className="footer">
