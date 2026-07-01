@@ -4,14 +4,17 @@ import { db } from "@/lib/db";
 import { ContentGrid } from "@/components/content-grid";
 import { LogoutButton } from "@/components/logout-button";
 import Link from "next/link";
-import { Settings, Shield, UserRoundCog } from "lucide-react";
+import {
+  Bookmark, CalendarDays, ChevronRight, Clock3, CreditCard, History,
+  Laptop, Settings, Shield, UserRoundCog,
+} from "lucide-react";
 import { WatchProgressGrid } from "@/components/watch-progress-grid";
 
 export default async function Dashboard() {
   const user = await auth.currentUser();
   if (!user) redirect("/login");
 
-  const [subscription, watchlist, devices, progress] = await Promise.all([
+  const [subscription, watchlist, devices, progress, paymentCount] = await Promise.all([
     db.subscription.findFirst({
       where: { userId: user.id, status: "ACTIVE", expiresAt: { gt: new Date() } },
       include: { plan: true },
@@ -21,6 +24,7 @@ export default async function Dashboard() {
       where: { userId: user.id },
       include: { content: true },
       orderBy: { createdAt: "desc" },
+      take: 12,
     }),
     db.deviceSession.count({ where: { userId: user.id, expiresAt: { gt: new Date() } } }),
     db.watchProgress.findMany({
@@ -29,38 +33,76 @@ export default async function Dashboard() {
       orderBy: { lastWatchedAt: "desc" },
       take: 6,
     }),
+    db.payment.count({ where: { userId: user.id } }),
   ]);
 
+  const now = Date.now();
+  const expiresAt = subscription?.expiresAt.getTime();
+  const startsAt = subscription?.startsAt.getTime();
+  const daysLeft = expiresAt ? Math.max(0, Math.ceil((expiresAt - now) / 86_400_000)) : 0;
+  const elapsed = startsAt && expiresAt ? Math.max(0, now - startsAt) : 0;
+  const duration = startsAt && expiresAt ? Math.max(1, expiresAt - startsAt) : 1;
+  const planProgress = subscription ? Math.min(100, Math.round(elapsed / duration * 100)) : 0;
+  const initials = user.name.split(/\s+/).slice(0, 2).map(part => part[0]).join("").toUpperCase();
+  const admin = ["SUPER_ADMIN", "ADMIN", "CONTENT_MANAGER"].includes(user.role);
+
+  const shortcuts = [
+    { href: "/dashboard/profile", label: "Profil", detail: "Data akun", Icon: UserRoundCog },
+    { href: "/dashboard/subscription", label: "Langganan", detail: subscription?.plan.name ?? "Paket gratis", Icon: CreditCard },
+    { href: "/dashboard/devices", label: "Perangkat", detail: `${devices} sesi aktif`, Icon: Laptop },
+    { href: "/dashboard/history", label: "Riwayat", detail: `${progress.length} terbaru`, Icon: History },
+  ];
+
   return (
-    <main className="shell dashboard dashboard-context">
-      <div className="dashboard-heading">
-        <div>
-          <p className="eyebrow">Akun saya</p>
-          <h1>Halo, {user.name}</h1>
-          <p className="muted">{user.email}</p>
+    <main className="shell dashboard dashboard-context dashboard-overview">
+      <header className="dashboard-profile-head">
+        <div className="dashboard-identity">
+          <span className="dashboard-avatar">{initials || "U"}</span>
+          <div>
+            <p className="eyebrow">Akun saya</p>
+            <h1>{user.name}</h1>
+            <p>{user.email}</p>
+          </div>
         </div>
         <div className="dashboard-actions">
-          {["SUPER_ADMIN", "ADMIN", "CONTENT_MANAGER"].includes(user.role) && <Link className="btn btn-secondary" href="/admin/dashboard"><Shield size={17} /> Control Center</Link>}
-          {["SUPER_ADMIN", "ADMIN"].includes(user.role) && <Link className="btn btn-secondary" href="/admin/settings"><Settings size={17} /> Pengaturan Web</Link>}
-          <Link className="btn btn-secondary" href="/dashboard/profile"><UserRoundCog size={17} /> Pengaturan Akun</Link>
+          {admin && <Link className="btn btn-secondary" href="/admin/dashboard"><Shield size={17}/>Control Center</Link>}
+          <Link className="btn btn-secondary" href="/dashboard/preferences"><Settings size={17}/>Preferensi</Link>
           <LogoutButton />
         </div>
-      </div>
+      </header>
 
-      <div className="stats">
-        <div className="panel stat">
-          Paket aktif
-          <strong>{subscription?.plan.name ?? "Gratis"}</strong>
+      <section className="dashboard-subscription-band">
+        <div className="dashboard-plan-main">
+          <span className="dashboard-plan-icon"><CreditCard size={21}/></span>
+          <div>
+            <p>Paket saat ini</p>
+            <h2>{subscription?.plan.name ?? "Gratis"}</h2>
+          </div>
         </div>
-        <div className="panel stat">
-          Watchlist
-          <strong>{watchlist.length}</strong>
+        {subscription ? <div className="dashboard-plan-expiry">
+          <div><span><CalendarDays size={15}/>Berlaku hingga {subscription.expiresAt.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}</span><strong>{daysLeft} hari tersisa</strong></div>
+          <div className="dashboard-plan-track"><i style={{ width: `${planProgress}%` }}/></div>
+        </div> : <p className="dashboard-plan-copy">Episode premium memerlukan paket aktif.</p>}
+        <Link className="btn btn-sm" href={subscription ? "/dashboard/subscription" : "/plans"}>
+          {subscription ? "Kelola paket" : "Pilih paket"}<ChevronRight size={16}/>
+        </Link>
+      </section>
+
+      <section className="dashboard-metrics" aria-label="Ringkasan akun">
+        <div><Bookmark size={18}/><span>Watchlist<strong>{watchlist.length}</strong></span></div>
+        <div><Clock3 size={18}/><span>Sedang ditonton<strong>{progress.length}</strong></span></div>
+        <div><Laptop size={18}/><span>Perangkat aktif<strong>{devices}</strong></span></div>
+        <div><CreditCard size={18}/><span>Transaksi<strong>{paymentCount}</strong></span></div>
+      </section>
+
+      <section className="dashboard-shortcuts">
+        <div className="dashboard-section-heading"><div><p className="eyebrow">Kelola akun</p><h2>Akses cepat</h2></div></div>
+        <div className="dashboard-shortcut-grid">
+          {shortcuts.map(({ href, label, detail, Icon }) => <Link href={href} key={href}>
+            <span><Icon size={19}/></span><div><strong>{label}</strong><small>{detail}</small></div><ChevronRight size={17}/>
+          </Link>)}
         </div>
-        <div className="panel stat">
-          Perangkat
-          <strong>{devices || 1}</strong>
-        </div>
-      </div>
+      </section>
 
       <WatchProgressGrid
         title="Lanjut menonton"
@@ -71,11 +113,13 @@ export default async function Dashboard() {
       />
 
       {watchlist.length ? (
-        <ContentGrid title="Watchlist saya" items={watchlist.map((item) => item.content)} />
+        <ContentGrid title="Watchlist saya" items={watchlist.map(item => item.content)} />
       ) : (
         <div className="empty-state">
+          <Bookmark size={24}/>
           <h2>Watchlist masih kosong</h2>
           <p>Simpan drama agar mudah ditemukan kembali.</p>
+          <Link className="btn btn-sm" href="/browse">Jelajahi katalog</Link>
         </div>
       )}
     </main>
