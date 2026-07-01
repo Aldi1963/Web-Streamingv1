@@ -11,10 +11,27 @@ type OptimizedImageProps = {
 
 const DEFAULT_WIDTHS = [240, 360, 480, 720, 960];
 
+function unwrapImageProxy(src: string) {
+  let current = src;
+  for (let depth = 0; depth < 3; depth++) {
+    try {
+      const url = new URL(current);
+      if (url.hostname !== "wsrv.nl") break;
+      const nested = url.searchParams.get("url");
+      if (!nested || !/^https?:\/\//i.test(nested)) break;
+      current = nested;
+    } catch {
+      break;
+    }
+  }
+  return current;
+}
+
 function cdnUrl(src: string, width: number, quality: number, output: "avif" | "webp") {
-  if (!/^https?:\/\//i.test(src)) return src;
+  const source = unwrapImageProxy(src);
+  if (!/^https?:\/\//i.test(source)) return source;
   const params = new URLSearchParams({
-    url: src,
+    url: source,
     w: String(width),
     q: String(quality),
     output,
