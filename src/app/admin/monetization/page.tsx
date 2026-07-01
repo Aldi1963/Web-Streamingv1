@@ -50,7 +50,6 @@ export default async function MonetizationPage({
       <AdminLayout
         role={user.role}
         title="Monetisasi"
-        subtitle="Kelola paket, langganan aktif, dan status pembayaran dalam satu layar"
       >
         <section className="monetization-page">
           <div className="panel monetization-hero">
