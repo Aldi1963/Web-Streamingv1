@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { Play, Trash2 } from "lucide-react";
+import { CalendarDays, CheckCircle2, CreditCard, Gauge, Laptop, MonitorPlay, Play, Trash2 } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
+import { RedeemCodePanel } from "@/components/redeem-code-panel";
 
 type Account = {
   profile: { name: string; email: string; emailVerifiedAt?: string | null; createdAt: string };
-  subscription?: { status: string; startsAt: string; expiresAt: string; plan: { name: string } } | null;
+  subscription?: { status: string; startsAt: string; expiresAt: string; graceEndsAt?: string | null; plan: { name: string; maxDevices: number; maxResolution: string; providerAccess?: unknown } } | null;
+  subscriptionHistory: Array<{ id: string; status: string; startsAt: string; expiresAt: string; plan: { name: string } }>;
   payments: Array<{ id: string; invoiceNumber: string; provider: string; amount: string; status: string; paidAt?: string | null; expiresAt?: string | null; createdAt: string }>;
   devices: Array<{ id: string; deviceName?: string; browser?: string; ip?: string; lastActiveAt: string; expiresAt: string }>;
   preferences?: { autoplay: boolean; defaultMuted: boolean; playbackSpeed: number; preferredQuality: string; emailNotifications: boolean } | null;
@@ -47,6 +49,7 @@ export function AccountCenter({ section }: { section: string }) {
     EXPIRED: "Gagal",
     CANCELLED: "Dibatalkan",
   }[status] || status);
+  const subscriptionStatusLabel = (status: string) => ({ ACTIVE: "Aktif", TRIAL: "Trial", GRACE: "Masa tenggang", EXPIRED: "Selesai", CANCELLED: "Dibatalkan" }[status] || status);
 
   const preferencesSection = section === "preferences";
   return <main className="shell dashboard dashboard-context">
@@ -89,14 +92,77 @@ export function AccountCenter({ section }: { section: string }) {
     </form>
     </section>}
 
-    {section === "subscription" && <div className="panel account-detail">
-      {account.subscription ? <>
-        <h2>{account.subscription.plan.name}</h2>
-        <p>Status: <strong>{account.subscription.status}</strong></p>
-        <p>Berlaku hingga: {new Date(account.subscription.expiresAt).toLocaleString("id-ID")}</p>
-        <p>Akses seluruh episode aktif selama masa paket.</p>
-      </> : <><h2>Paket gratis</h2><p className="muted">Belum ada langganan aktif.</p><Link className="btn" href="/plans">Pilih paket</Link></>}
-    </div>}
+    {section === "subscription" && (() => {
+      const subscription = account.subscription;
+      const now = Date.now();
+      const startsAt = subscription ? new Date(subscription.startsAt).getTime() : now;
+      const accessEndsAt = subscription?.status === "GRACE" && subscription.graceEndsAt
+        ? new Date(subscription.graceEndsAt).getTime()
+        : subscription ? new Date(subscription.expiresAt).getTime() : now;
+      const total = Math.max(1, accessEndsAt - startsAt);
+      const progress = subscription ? Math.min(100, Math.max(0, Math.round((now - startsAt) / total * 100))) : 0;
+      const daysLeft = subscription ? Math.max(0, Math.ceil((accessEndsAt - now) / 86_400_000)) : 0;
+      const activeDevices = account.devices.filter(device => new Date(device.expiresAt).getTime() > now).length;
+      const providerAccess = Array.isArray(subscription?.plan.providerAccess)
+        ? subscription.plan.providerAccess.length ? `${subscription.plan.providerAccess.length} provider` : "Semua provider"
+        : "Semua provider";
+      const recentPayments = account.payments.slice(0, 3);
+      return <section className="subscription-center">
+        <div className="subscription-overview">
+          <section className="subscription-plan-card">
+            <div className="subscription-plan-head">
+              <div className="subscription-plan-title">
+                <span className="dashboard-plan-icon"><CreditCard size={21}/></span>
+                <div><p className="eyebrow">Paket saat ini</p><h2>{subscription?.plan.name ?? "Paket gratis"}</h2></div>
+              </div>
+              <span className={`subscription-status ${subscription?.status.toLowerCase() ?? "free"}`}><CheckCircle2 size={14}/>{subscription ? subscriptionStatusLabel(subscription.status) : "Gratis"}</span>
+            </div>
+            {subscription ? <>
+              <div className="subscription-dates">
+                <span><CalendarDays size={16}/>Berlaku hingga {new Date(accessEndsAt).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}</span>
+                <strong>{daysLeft} hari tersisa</strong>
+              </div>
+              <div className="subscription-lifetime"><div className="subscription-lifetime-track"><span style={{ width: `${progress}%` }}/></div></div>
+            </> : <p className="muted">Pilih paket untuk membuka seluruh episode premium.</p>}
+            <div className="subscription-actions">
+              <Link className="btn" href="/plans">{subscription ? "Perpanjang paket" : "Pilih paket"}</Link>
+              {subscription && <Link className="btn btn-secondary" href="/plans">Lihat paket lain</Link>}
+            </div>
+          </section>
+
+          <section className="subscription-usage">
+            <h2>Penggunaan & benefit</h2>
+            <div className="subscription-usage-row"><Laptop size={18}/><span>Perangkat<strong>{activeDevices} / {subscription?.plan.maxDevices ?? 1} aktif</strong></span><Link href="/dashboard/devices">Kelola</Link></div>
+            <div className="subscription-usage-row"><MonitorPlay size={18}/><span>Kualitas video<strong>{subscription?.plan.maxResolution ?? "720p"}</strong></span></div>
+            <div className="subscription-usage-row"><Gauge size={18}/><span>Akses konten<strong>{providerAccess}</strong></span></div>
+          </section>
+        </div>
+
+        <div className="subscription-redeem"><RedeemCodePanel /></div>
+
+        <div className="subscription-lists">
+          <section className="subscription-list">
+            <div className="subscription-list-head"><h2>Riwayat langganan</h2></div>
+            {account.subscriptionHistory.slice(0, 3).map(item => <div className="subscription-list-row" key={item.id}>
+              <span className="subscription-list-copy"><strong>{item.plan.name}</strong><small>{new Date(item.startsAt).toLocaleDateString("id-ID")} - {new Date(item.expiresAt).toLocaleDateString("id-ID")}</small></span>
+              <span className="subscription-list-value">{subscriptionStatusLabel(item.status)}</span>
+              <span className={`status-badge status-${item.status.toLowerCase()}`}>{subscriptionStatusLabel(item.status)}</span>
+            </div>)}
+            {!account.subscriptionHistory.length && <p className="subscription-empty">Belum ada riwayat langganan.</p>}
+          </section>
+
+          <section className="subscription-list">
+            <div className="subscription-list-head"><h2>Tagihan terakhir</h2><Link className="section-link" href="/dashboard/payments">Lihat semua</Link></div>
+            {recentPayments.map(payment => <div className="subscription-list-row" key={payment.id}>
+              <span className="subscription-list-copy"><strong>{payment.invoiceNumber}</strong><small>{new Date(payment.createdAt).toLocaleDateString("id-ID")}</small></span>
+              <span className="subscription-list-value">{money(payment.amount)}</span>
+              <Link className={`status-badge status-${payment.status.toLowerCase()}`} href={`/payment/${payment.invoiceNumber}`}>{paymentStatusLabel(payment.status)}</Link>
+            </div>)}
+            {!recentPayments.length && <p className="subscription-empty">Belum ada tagihan.</p>}
+          </section>
+        </div>
+      </section>;
+    })()}
 
     {["payments", "invoices"].includes(section) && <div className="panel admin-data"><div className="admin-table-wrap"><table><thead><tr><th>Invoice</th><th>Jumlah</th><th>Status</th><th>Batas waktu</th><th>Dibayar</th><th>Aksi</th></tr></thead><tbody>
       {account.payments.map(payment => <tr key={payment.id}>

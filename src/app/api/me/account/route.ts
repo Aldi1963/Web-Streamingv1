@@ -4,6 +4,7 @@ import { z } from "zod";
 import { auth } from "@/services/auth-service";
 import { db } from "@/lib/db";
 import { apiError } from "@/lib/http";
+import { activeSubscriptionWhere } from "@/services/playback-access-service";
 
 const updateInput = z.discriminatedUnion("action", [
   z.object({ action: z.literal("profile"), name: z.string().trim().min(2).max(80), email: z.string().email().max(190) }),
@@ -26,12 +27,18 @@ function paymentPurpose(payload: unknown) {
 export async function GET() {
   const user = await auth.currentUser();
   if (!user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  const [profile, subscription, payments, devices, preferences] = await Promise.all([
+  const [profile, subscription, subscriptionHistory, payments, devices, preferences] = await Promise.all([
     db.user.findUnique({ where: { id: user.id }, select: { id: true, name: true, email: true, emailVerifiedAt: true, createdAt: true } }),
     db.subscription.findFirst({
-      where: { userId: user.id, status: { in: ["ACTIVE", "TRIAL", "GRACE"] } },
+      where: activeSubscriptionWhere(user.id),
       include: { plan: true },
       orderBy: { expiresAt: "desc" },
+    }),
+    db.subscription.findMany({
+      where: { userId: user.id },
+      include: { plan: { select: { name: true } } },
+      orderBy: { startsAt: "desc" },
+      take: 5,
     }),
     db.payment.findMany({
       where: { userId: user.id },
@@ -64,6 +71,7 @@ export async function GET() {
   return NextResponse.json({
     profile,
     subscription,
+    subscriptionHistory,
     payments: payments.map(payment => ({
       id: payment.id,
       invoiceNumber: payment.invoiceNumber,
