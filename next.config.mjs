@@ -59,19 +59,37 @@ const nextConfig = {
     remotePatterns: mediaHosts.map((hostname) => ({ protocol: "https", hostname })),
   },
   async headers() {
-    return [{
-      source: "/(.*)",
-      headers: [
-        { key: "X-Content-Type-Options", value: "nosniff" },
-        { key: "X-Frame-Options", value: "SAMEORIGIN" },
-        { key: "X-DNS-Prefetch-Control", value: "off" },
-        { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-        { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
-        { key: "Cross-Origin-Resource-Policy", value: "same-site" },
-        { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
-        { key: "Content-Security-Policy", value: contentSecurityPolicy },
-      ]
-    }];
+    const securityHeaders = [
+      { key: "X-Content-Type-Options", value: "nosniff" },
+      { key: "X-Frame-Options", value: "SAMEORIGIN" },
+      { key: "X-DNS-Prefetch-Control", value: "off" },
+      { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+      { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+      { key: "Cross-Origin-Resource-Policy", value: "same-site" },
+      { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+      { key: "Content-Security-Policy", value: contentSecurityPolicy },
+    ];
+
+    return [
+      {
+        source: "/provider-logos/:path*",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+          ...securityHeaders,
+        ],
+      },
+      {
+        source: "/clipku-icon.svg",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+          ...securityHeaders,
+        ],
+      },
+      {
+        source: "/(.*)",
+        headers: securityHeaders,
+      },
+    ];
   }
 };
 export default nextConfig;

@@ -23,6 +23,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="id">
       <head>
         <meta name="referrer" content="no-referrer" />
+        <link rel="preconnect" href="https://wsrv.nl" />
+        <link rel="dns-prefetch" href="https://wsrv.nl" />
       </head>
       <body>
         <PwaRegistration />

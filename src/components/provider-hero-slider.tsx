@@ -43,11 +43,19 @@ export function ProviderHeroSlider({ items, providerName }: {
 
   if (!items.length) return null;
 
+  const shouldRenderMedia = (index: number) => {
+    if (index === activeIndex) return true;
+    if (!hasMultiple) return true;
+
+    const nextIndex = (activeIndex + 1) % items.length;
+    return index === nextIndex;
+  };
+
   return (
     <section className="featured-slider" aria-label={`Drama populer ${providerName ?? "semua provider"}`}>
       {items.map((item, index) => (
         <article key={item.id} className={`featured-slide ${index === activeIndex ? "active" : ""}`}>
-          {(item.bannerUrl || item.posterUrl) ? (
+          {shouldRenderMedia(index) && (item.bannerUrl || item.posterUrl) ? (
             <OptimizedImage
               src={item.bannerUrl || item.posterUrl || ""}
               alt=""
@@ -62,7 +70,7 @@ export function ProviderHeroSlider({ items, providerName }: {
           <div className="featured-overlay" />
           <div className="featured-info">
             <div className="featured-poster">
-              {item.posterUrl ? (
+              {shouldRenderMedia(index) && item.posterUrl ? (
                 <OptimizedImage
                   src={item.posterUrl}
                   alt={item.title}
