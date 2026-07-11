@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { extractStreamUrl, extractSubtitleUrl, proxyMediaUrl, selectEpisodePayload } from "@/lib/stream-utils";
+import { collectStreamOptions, extractStreamUrl, extractSubtitleUrl, proxyMediaUrl, selectEpisodePayload } from "@/lib/stream-utils";
 import { clipku } from "./clipku-api-service";
 import { playbackAccess } from "./playback-access-service";
 
@@ -85,9 +85,14 @@ export class WatchService {
     url = extractStreamUrl(episodePayload) ?? streamValue(episodePayload, ["hls_url", "video_url", "url", "data.hls_url", "data.video_url", "data.url", "result.url"]);
     if (!url) throw new Error("Playback URL belum ditemukan.");
     const subtitle = extractSubtitleUrl(episodePayload);
+    const sources = collectStreamOptions(episodePayload).map(source => ({
+      ...source,
+      url: proxyMediaUrl(source.url, { contentId, episode: normalizedEpisode }),
+    }));
     return {
       url: proxyMediaUrl(url, { contentId, episode: normalizedEpisode }),
       subtitle,
+      sources,
       type: url.includes(".m3u8") ? "hls" : "mp4",
       expiresIn: 300,
     };

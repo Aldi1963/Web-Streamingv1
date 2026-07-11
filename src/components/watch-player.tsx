@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Gauge,
+  Languages,
   ListVideo,
   Maximize,
   Minimize,
@@ -67,11 +68,12 @@ export function WatchPlayer({
   defaultMuted = false,
   playbackSpeed = 1,
   preferredQuality = "auto",
+  providerSlug,
   saveProgress = true,
   fullscreenOrientation = "landscape",
 }: {
   src: string;
-  sources?: Array<{ label: string; url: string }>;
+  sources?: Array<{ label: string; url: string; language?: string }>;
   subtitle?: string;
   poster?: string;
   contentTitle?: string;
@@ -87,6 +89,7 @@ export function WatchPlayer({
   defaultMuted?: boolean;
   playbackSpeed?: number;
   preferredQuality?: string;
+  providerSlug?: string;
   saveProgress?: boolean;
   fullscreenOrientation?: FullscreenOrientationMode;
 }) {
@@ -121,10 +124,17 @@ export function WatchPlayer({
   const [episodeStateId, setEpisodeStateId] = useState(episodeId);
   const [switchingEpisode, setSwitchingEpisode] = useState<number | null>(null);
   const [switchError, setSwitchError] = useState("");
+  const [availableSources, setAvailableSources] = useState(sources);
   const [activeSrc, setActiveSrc] = useState(
     sources.find(source => preferredQuality !== "auto" && source.label.toLowerCase().includes(preferredQuality.toLowerCase()))?.url ?? src,
   );
-  const activeQualityLabel = sources.find(source => source.url === activeSrc)?.label ?? "Otomatis";
+  const activeSource = availableSources.find(source => source.url === activeSrc);
+  const activeLanguage = activeSource?.language;
+  const languages = [...new Set(availableSources.map(source => source.language).filter((value): value is string => Boolean(value)))];
+  const visibleQualitySources = activeLanguage
+    ? availableSources.filter(source => source.language === activeLanguage)
+    : availableSources;
+  const activeQualityLabel = `${activeLanguage ? `${activeLanguage} · ` : ""}${activeSource?.label ?? "Otomatis"}`;
   const portraitDramaMode = fullscreenOrientation === "portrait";
   const portraitPlayerMode = portraitDramaMode && fullscreen;
   const portraitSheetOpen = portraitPlayerMode && (episodeOpen || settingsOpen || shareOpen);
@@ -311,13 +321,17 @@ export function WatchPlayer({
       const positioned = cue as VTTCue;
       if (typeof positioned.line !== "undefined") {
         positioned.snapToLines = false;
-        positioned.line = 76;
+        positioned.line = providerSlug === "netshort" ? 66 : 76;
         positioned.position = 50;
         positioned.size = 86;
         positioned.align = "center";
       }
     });
-  }, []);
+  }, [providerSlug]);
+
+  useEffect(() => {
+    setAvailableSources(sources);
+  }, [sources]);
 
   useEffect(() => {
     const video = ref.current;
@@ -618,16 +632,27 @@ export function WatchPlayer({
       if (!response.ok) throw new Error(result.message || "Gagal memuat episode.");
       if (!result?.url || typeof result.url !== "string") throw new Error("Episode berikutnya belum tersedia.");
       const nextSource = proxyMediaUrl(String(result.url), { contentId, episode: targetEpisodeNumber });
+      const nextSources: Array<{ label: string; url: string; language?: string }> = Array.isArray(result.sources)
+        ? result.sources.filter((source: unknown): source is { label: string; url: string; language?: string } => {
+            if (!source || typeof source !== "object") return false;
+            const row = source as Record<string, unknown>;
+            return typeof row.label === "string" && typeof row.url === "string";
+          })
+        : [];
+      const preferredNextSource = nextSources.find(source => source.language === activeLanguage && source.label === activeSource?.label)
+        ?? nextSources.find(source => source.language === activeLanguage)
+        ?? nextSources[0];
       const nextSubtitle = typeof result.subtitle === "string" && result.subtitle ? result.subtitle : undefined;
       setEpisodeNumber(targetEpisodeNumber);
       setEpisodeStateId(target.id);
       setActiveSubtitle(nextSubtitle);
       setCaptionsEnabled(Boolean(nextSubtitle));
+      setAvailableSources(nextSources.length ? nextSources : [{ label: "Otomatis", url: nextSource }]);
       resumeApplied.current = false;
       setEpisodeOpen(false);
       setSettingsOpen(false);
       setShareOpen(false);
-      setActiveSrc(nextSource);
+      setActiveSrc(preferredNextSource?.url ?? nextSource);
       const nextUrl = new URL(window.location.href);
       nextUrl.searchParams.set("ep", String(targetEpisodeNumber));
       window.history.replaceState({}, "", nextUrl.toString());
@@ -866,7 +891,7 @@ export function WatchPlayer({
           </div>
           <div className="player-setting-group">
             <span><Gauge size={16} /> Kualitas</span>
-            {sources.map(source => (
+            {visibleQualitySources.map(source => (
               <button
                 key={source.url}
                 type="button"
@@ -878,6 +903,28 @@ export function WatchPlayer({
               </button>
             ))}
           </div>
+          {languages.length > 1 && (
+            <div className="player-setting-group">
+              <span><Languages size={16} /> Bahasa Audio</span>
+              {languages.map(language => (
+                <button
+                  key={language}
+                  type="button"
+                  className={language === activeLanguage ? "active" : ""}
+                  onClick={() => {
+                    const next = availableSources.find(source => source.language === language && source.label === activeSource?.label)
+                      ?? availableSources.find(source => source.language === language);
+                    if (next) {
+                      setActiveSrc(next.url);
+                      resumeApplied.current = false;
+                    }
+                  }}
+                >
+                  {language}{language === activeLanguage && <Check size={15} />}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="player-setting-group">
             <span><Captions size={16} /> Bahasa Subtitle</span>
             <button type="button" className={!captionsEnabled ? "active" : ""} onClick={() => setCaptionsEnabled(false)}>

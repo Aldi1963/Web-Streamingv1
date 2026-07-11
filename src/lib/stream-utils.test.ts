@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { extractStreamUrl, isProxyableMediaUrl, proxyMediaUrl, selectEpisodePayload } from "./stream-utils";
+import { collectStreamOptions, extractStreamUrl, isProxyableMediaUrl, proxyMediaUrl, selectEpisodePayload } from "./stream-utils";
 
 describe("stream-utils", () => {
   it("selects the requested GoodShort episode", () => {
@@ -23,6 +23,17 @@ describe("stream-utils", () => {
   it("rejects unrelated and non-http values", () => {
     expect(extractStreamUrl({ url: "javascript:alert(1)" })).toBeNull();
     expect(extractStreamUrl({ url: "https://example.com/page" })).toBeNull();
+  });
+
+  it("keeps API language metadata on video choices", () => {
+    const options = collectStreamOptions({ data: [
+      { language: "id", quality: "720", url: "https://cdn.test/id-720.m3u8" },
+      { lang: "English", quality: "720p", url: "https://cdn.test/en-720.m3u8" },
+    ] });
+    expect(options).toEqual([
+      { label: "720p", language: "Indonesia", url: "https://cdn.test/id-720.m3u8" },
+      { label: "720p", language: "English", url: "https://cdn.test/en-720.m3u8" },
+    ]);
   });
 
   it("proxies supported media hosts through same-origin routes", () => {

@@ -8,7 +8,7 @@ import { WatchPlayer } from "@/components/watch-player";
 import { WatchBackButton } from "@/components/watch-back-button";
 import { WatchlistButton } from "@/components/watchlist-button";
 import { episodesWithFallback } from "@/lib/episodes";
-import { extractStreamUrl, extractSubtitleUrl, proxyMediaUrl, selectEpisodePayload } from "@/lib/stream-utils";
+import { collectStreamOptions, extractStreamUrl, extractSubtitleUrl, proxyMediaUrl, selectEpisodePayload } from "@/lib/stream-utils";
 import { playbackAccess } from "@/services/playback-access-service";
 
 export const dynamic = "force-dynamic";
@@ -111,7 +111,7 @@ export default async function Watch({
   let streamUrl: string | null = null;
   let subtitleUrl: string | null = currentStoredEpisode?.subtitleUrl ?? content.subtitleUrl ?? null;
   let streamError: string | null = null;
-  let streamOptions: Array<{ label: string; url: string }> = [];
+  let streamOptions: Array<{ label: string; url: string; language?: string }> = [];
   if (PROXY_VIDEO_PROVIDERS.has(content.providerSlug)) {
     streamUrl = `/api/video-proxy?provider=${encodeURIComponent(content.providerSlug)}&contentId=${encodeURIComponent(content.clipkuContentId)}&contentDbId=${encodeURIComponent(content.id)}&ep=${epNum}`;
     streamOptions = [{ label: "Otomatis", url: streamUrl }];
@@ -141,31 +141,6 @@ export default async function Watch({
     streamError = content.providerSlug === "drama"
       ? "Stream Drakor membutuhkan cookie login DrakorID di server. Hubungi admin untuk memperbarui DRAKOR_COOKIE."
       : "Gagal mengambil URL stream. Coba lagi nanti.";
-  }
-
-  // Some providers return every episode in one response. Select the requested
-  // item before extracting a media URL, otherwise the first episode always wins.
-  function collectStreamOptions(obj: unknown, found: Array<{ label: string; url: string }> = [], depth = 0) {
-    if (!obj || depth > 10) return found;
-    if (Array.isArray(obj)) obj.forEach(value => collectStreamOptions(value, found, depth + 1));
-    else if (typeof obj === "object") {
-      const row = obj as Record<string, unknown>;
-      for (const qualityKey of ["1080p", "720p", "480p", "360p"]) {
-        const qualityUrl = row[qualityKey];
-        if (typeof qualityUrl === "string" && /\.(m3u8|mp4)(?:[?&]|$)/i.test(qualityUrl) && !found.some(item => item.url === qualityUrl)) {
-          found.push({ label: qualityKey, url: qualityUrl });
-        }
-      }
-      const url = ["videoPath", "url", "video_url", "play_url", "hls_url", "resourceLink"]
-        .map(key => row[key])
-        .find(value => typeof value === "string" && /\.(m3u8|mp4)(?:[?&]|$)/i.test(value)) as string | undefined;
-      if (url && !found.some(item => item.url === url)) {
-        const quality = row.quality ?? row.resolution ?? row.label;
-        found.push({ label: quality ? `${quality}p`.replace("pp", "p") : `Sumber ${found.length + 1}`, url });
-      }
-      Object.values(row).forEach(value => collectStreamOptions(value, found, depth + 1));
-    }
-    return found;
   }
 
   const proxyContext = { contentId: content.id, episode: epNum };
@@ -216,6 +191,7 @@ export default async function Watch({
             defaultMuted={preference?.defaultMuted ?? false}
             playbackSpeed={preference?.playbackSpeed ?? 1}
             preferredQuality={preference?.preferredQuality ?? "auto"}
+            providerSlug={content.providerSlug}
             saveProgress={Boolean(user)}
             fullscreenOrientation={content.type === "movie" ? "landscape" : "portrait"}
           />

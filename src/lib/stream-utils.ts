@@ -75,6 +75,58 @@ function isMediaUrl(value: string) {
     || /^https:\/\/[^/]+\.montagehub\.xyz\/.+[?&]auth_key=/i.test(value);
 }
 
+export type StreamOption = { label: string; url: string; language?: string };
+
+function languageLabel(value: unknown) {
+  if (typeof value !== "string" || !value.trim() || value.length > 40) return undefined;
+  const normalized = value.trim();
+  const key = normalized.toLowerCase().replace(/[_-]/g, " ");
+  if (["id", "in", "indo", "indonesia", "bahasa indonesia"].includes(key)) return "Indonesia";
+  if (["en", "eng", "english"].includes(key)) return "English";
+  if (["zh", "cn", "chinese", "mandarin"].includes(key)) return "Mandarin";
+  if (["ko", "kor", "korean", "korea"].includes(key)) return "Korea";
+  if (["ja", "jp", "japanese", "japan"].includes(key)) return "Jepang";
+  return normalized;
+}
+
+export function collectStreamOptions(
+  obj: unknown,
+  found: StreamOption[] = [],
+  depth = 0,
+  inheritedLanguage?: string,
+) {
+  if (!obj || depth > 10) return found;
+  if (Array.isArray(obj)) {
+    obj.forEach(value => collectStreamOptions(value, found, depth + 1, inheritedLanguage));
+    return found;
+  }
+  if (typeof obj !== "object") return found;
+  const row = obj as Record<string, unknown>;
+  const language = languageLabel(
+    row.language ?? row.lang ?? row.audio_language ?? row.audioLanguage ?? row.dubbing ?? row.dubName,
+  ) ?? inheritedLanguage;
+  for (const qualityKey of ["1080p", "720p", "480p", "360p"]) {
+    const qualityUrl = row[qualityKey];
+    if (typeof qualityUrl === "string" && isMediaUrl(qualityUrl) && !found.some(item => item.url === qualityUrl)) {
+      found.push({ label: qualityKey, url: qualityUrl, ...(language ? { language } : {}) });
+    }
+  }
+  const url = ["videoPath", "url", "video_url", "play_url", "hls_url", "resourceLink", "stream_url"]
+    .map(key => row[key])
+    .find(value => typeof value === "string" && isMediaUrl(value)) as string | undefined;
+  if (url && !found.some(item => item.url === url)) {
+    const rawQuality = row.quality ?? row.resolution ?? row.label;
+    const quality = typeof rawQuality === "string" || typeof rawQuality === "number" ? String(rawQuality) : "";
+    found.push({
+      label: quality ? (/p$/i.test(quality) ? quality : `${quality}p`) : `Sumber ${found.length + 1}`,
+      url,
+      ...(language ? { language } : {}),
+    });
+  }
+  Object.values(row).forEach(value => collectStreamOptions(value, found, depth + 1, language));
+  return found;
+}
+
 export function extractStreamUrl(obj: unknown, depth = 0): string | null {
   if (depth > 10 || !obj) return null;
   if (typeof obj === "string") {
