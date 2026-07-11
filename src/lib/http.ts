@@ -2,12 +2,16 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
 function logError(error: unknown, context?: Record<string, unknown>) {
+  const sensitiveKey = /authorization|cookie|password|secret|token|api[-_]?key|signature/i;
+  const safeContext = Object.fromEntries(
+    Object.entries(context ?? {}).map(([key, value]) => [key, sensitiveKey.test(key) ? "[REDACTED]" : value]),
+  );
   const entry = {
     level: "error",
     timestamp: new Date().toISOString(),
     message: error instanceof Error ? error.message : String(error),
     ...(error instanceof Error ? { stack: error.stack } : {}),
-    ...context,
+    ...safeContext,
   };
   // In production, send to structured logger (pino/winston).
   // For now, print as JSON for log aggregation tools.

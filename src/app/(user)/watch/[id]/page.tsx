@@ -9,6 +9,7 @@ import { WatchBackButton } from "@/components/watch-back-button";
 import { WatchlistButton } from "@/components/watchlist-button";
 import { episodesWithFallback } from "@/lib/episodes";
 import { extractStreamUrl, extractSubtitleUrl, proxyMediaUrl, selectEpisodePayload } from "@/lib/stream-utils";
+import { playbackAccess } from "@/services/playback-access-service";
 
 export const dynamic = "force-dynamic";
 
@@ -35,10 +36,7 @@ export default async function Watch({
     redirect(`/login?redirect=${encodeURIComponent(`/watch/${id}?ep=${epNum}`)}`);
   }
   const activeSubscription = user && requiresSubscription
-    ? await db.subscription.findFirst({
-        where: { userId: user.id, status: { in: ["ACTIVE", "TRIAL", "GRACE"] }, expiresAt: { gt: new Date() } },
-        select: { id: true },
-      }).catch(() => null)
+    ? await playbackAccess(user.id, epNum).catch(() => null)
     : null;
   const preference = user ? await db.userPreference.findUnique({ where: { userId: user.id } }).catch(() => null) : null;
   const saved = user ? await db.watchlist.findUnique({
@@ -83,7 +81,7 @@ export default async function Watch({
       }).catch(() => [])
     : [];
 
-  if (requiresSubscription && !activeSubscription) {
+  if (requiresSubscription && !activeSubscription?.allowed) {
     return (
       <main className="watch-page">
         <section className="watch-stage">

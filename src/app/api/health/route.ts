@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 export async function GET() {
   const checks: Record<string, unknown> = {};
   let healthy = true;
+  let degraded = false;
 
   const dbStart = Date.now();
   try {
@@ -24,14 +25,14 @@ export async function GET() {
       status: response.ok ? "ok" : "degraded",
       latency: Date.now() - apiStart,
     };
-    if (!response.ok) healthy = false;
+    if (!response.ok) degraded = true;
   } catch {
     checks.clipku_api = { status: "down" };
     healthy = false;
   }
 
   try {
-    const [ok, degraded, failed, stale] = await Promise.all([
+    const [ok, degradedCount, failed, stale] = await Promise.all([
       db.content.count({ where: { isActive: true, playbackStatus: "OK" } }),
       db.content.count({ where: { isActive: true, playbackStatus: "DEGRADED" } }),
       db.content.count({ where: { isActive: true, playbackStatus: "FAILED" } }),
@@ -45,13 +46,17 @@ export async function GET() {
         },
       }),
     ]);
-    checks.playback = { status: failed > 0 || degraded > 0 ? "degraded" : "ok", ok, degraded, failed, stale };
+    const playbackDegraded = failed > 0 || degradedCount > 0 || stale > 0;
+    checks.playback = { status: playbackDegraded ? "degraded" : "ok", ok, degraded: degradedCount, failed, stale };
+    if (playbackDegraded) degraded = true;
   } catch {
     checks.playback = { status: "unknown" };
+    degraded = true;
   }
 
+  const status = !healthy ? "unhealthy" : degraded ? "degraded" : "healthy";
   return NextResponse.json(
-    { status: healthy ? "healthy" : "unhealthy", timestamp: new Date().toISOString(), checks },
+    { status, timestamp: new Date().toISOString(), checks },
     { status: healthy ? 200 : 503 },
   );
 }

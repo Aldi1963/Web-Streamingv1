@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { extractStreamUrl, extractSubtitleUrl, proxyMediaUrl, selectEpisodePayload } from "@/lib/stream-utils";
 import { clipku } from "./clipku-api-service";
+import { playbackAccess } from "./playback-access-service";
 
 const FREE_EPISODE_LIMIT = 8;
 const PROXY_STREAM_PROVIDERS = new Set(["dramabox", "melolo"]);
@@ -43,11 +44,9 @@ export class WatchService {
     const normalizedEpisode = Math.max(1, Math.floor(episode));
     if (normalizedEpisode > FREE_EPISODE_LIMIT) {
       if (!userId) throw new Error("Login diperlukan untuk melanjutkan.");
-      const subscription = await db.subscription.findFirst({
-        where: { userId, status: { in: ["ACTIVE", "TRIAL", "GRACE"] }, expiresAt: { gt: new Date() } },
-        include: { plan: true },
-      });
-      if (!subscription) throw new Error("Langganan aktif diperlukan untuk menonton.");
+      if (!(await playbackAccess(userId, normalizedEpisode)).allowed) {
+        throw new Error("Langganan aktif diperlukan untuk menonton.");
+      }
     }
 
     if (PROXY_STREAM_PROVIDERS.has(content.providerSlug)) {

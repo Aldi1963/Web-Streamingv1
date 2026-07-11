@@ -1,7 +1,6 @@
 import { NextRequest } from "next/server";
-import http from "node:http";
-import https from "node:https";
-import { Readable } from "node:stream";
+import { safeMediaFetch } from "@/lib/safe-media-fetch";
+import { signMediaUrl, verifyMediaUrl } from "@/lib/media-token";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +16,8 @@ function isAllowedSource(value: string) {
 function proxyUrl(value: string, base: string) {
   const absolute = new URL(value, base).toString();
   if (!isAllowedSource(absolute)) throw new Error("Host media tidak diizinkan.");
-  return `/api/drakorid-proxy?url=${encodeURIComponent(absolute)}`;
+  const { signature, expiresAt } = signMediaUrl(absolute);
+  return `/api/drakorid-proxy?url=${encodeURIComponent(absolute)}&exp=${expiresAt}&sig=${signature}`;
 }
 
 function rewritePlaylist(playlist: string, source: string) {
@@ -33,13 +33,18 @@ function rewritePlaylist(playlist: string, source: string) {
 
 export async function GET(request: NextRequest) {
   const source = request.nextUrl.searchParams.get("url");
+  const expiresAt = Number(request.nextUrl.searchParams.get("exp"));
+  const signature = request.nextUrl.searchParams.get("sig");
   if (!source || !isAllowedSource(source)) {
     return Response.json({ message: "URL media tidak valid." }, { status: 400 });
+  }
+  if (!verifyMediaUrl(source, expiresAt, signature)) {
+    return Response.json({ message: "Akses media tidak valid." }, { status: 403 });
   }
 
   try {
     const range = request.headers.get("range");
-    const upstream = await fetch(source, {
+    const upstream = await safeMediaFetch(source, isAllowedSource, {
       headers: {
         Accept: "*/*",
         "User-Agent": "Mozilla/5.0",

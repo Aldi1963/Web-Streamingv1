@@ -2,6 +2,16 @@
 @import "../styles/home.css";
 @import "../styles/catalog.css";
 @import "../styles/watch.css";
+
+.legal-page {
+  width: min(760px, calc(100% - 32px));
+  margin: 40px auto 80px;
+  line-height: 1.7;
+}
+
+.legal-page h1 { margin-bottom: 8px; }
+.legal-page h2 { margin: 28px 0 8px; font-size: 1.2rem; }
+.legal-page p { color: var(--muted, #a9a9b2); }
 @import "../styles/navigation-home.css";
 @import "../styles/overlays-dashboard.css";
 @import "../styles/admin.css";

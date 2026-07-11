@@ -2,6 +2,8 @@ import { NextRequest } from "next/server";
 import { isProxyableMediaUrl } from "@/lib/stream-utils";
 import { auth } from "@/services/auth-service";
 import { db } from "@/lib/db";
+import { safeMediaFetch } from "@/lib/safe-media-fetch";
+import { playbackAccess } from "@/services/playback-access-service";
 
 export const dynamic = "force-dynamic";
 const FREE_EPISODE_LIMIT = 8;
@@ -17,14 +19,8 @@ async function authorized(contentId: string | null, episode: number) {
     select: { id: true },
   });
   if (!content) return false;
-  if (episode <= FREE_EPISODE_LIMIT) return true;
   const user = await auth.currentUser();
-  if (!user) return false;
-  const subscription = await db.subscription.findFirst({
-    where: { userId: user.id, status: { in: ["ACTIVE", "TRIAL", "GRACE"] }, expiresAt: { gt: new Date() } },
-    select: { id: true },
-  });
-  return Boolean(subscription);
+  return (await playbackAccess(user?.id ?? "", episode)).allowed;
 }
 
 function proxyUrl(value: string, base: string, context: { contentId: string; episode: number }) {
@@ -57,7 +53,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const range = request.headers.get("range");
-    const upstream = await fetch(source, {
+    const upstream = await safeMediaFetch(source, allowedSource, {
       headers: {
         Accept: "*/*",
         "User-Agent": "Mozilla/5.0",

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, Play, Sparkles } from "lucide-react";
 import { WatchPlayer } from "@/components/watch-player";
 import { WatchBackButton } from "@/components/watch-back-button";
+import { signMediaUrl } from "@/lib/media-token";
 
 export const dynamic = "force-dynamic";
 
@@ -61,7 +62,11 @@ export default async function DrakorIdPage({ params, searchParams }: PageProps) 
     );
   }
 
-  const streamUrl = stream.data_stream?.[0]?.url ? `/api/drakorid-proxy?url=${encodeURIComponent(stream.data_stream[0].url)}` : null;
+  const rawStreamUrl = stream.data_stream?.[0]?.url;
+  const streamToken = rawStreamUrl ? signMediaUrl(rawStreamUrl) : null;
+  const streamUrl = rawStreamUrl && streamToken
+    ? `/api/drakorid-proxy?url=${encodeURIComponent(rawStreamUrl)}&exp=${streamToken.expiresAt}&sig=${streamToken.signature}`
+    : null;
   const title = detail.title ?? "Drakor";
   const episodes = detail.episodes ?? [];
   const current = episodes.find(item => item.episode === ep) ?? episodes[0];

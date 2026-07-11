@@ -1,11 +1,10 @@
 import { NextRequest } from "next/server";
-import https from "node:https";
-import http from "node:http";
-import { Readable } from "node:stream";
 import { clipku } from "@/services/clipku-api-service";
 import { isProxyableMediaUrl } from "@/lib/stream-utils";
 import { auth } from "@/services/auth-service";
 import { db } from "@/lib/db";
+import { safeMediaFetch } from "@/lib/safe-media-fetch";
+import { playbackAccess } from "@/services/playback-access-service";
 
 export const dynamic = "force-dynamic";
 
@@ -67,58 +66,19 @@ async function authorizeDbContent(contentId: string | null, episode: number) {
     select: { id: true },
   });
   if (!content) return false;
-  if (episode <= FREE_EPISODE_LIMIT) return true;
   const user = await auth.currentUser();
-  if (!user) return false;
-  const subscription = await db.subscription.findFirst({
-    where: { userId: user.id, status: { in: ["ACTIVE", "TRIAL", "GRACE"] }, expiresAt: { gt: new Date() } },
-    select: { id: true },
-  });
-  return Boolean(subscription);
+  return (await playbackAccess(user?.id ?? "", episode)).allowed;
 }
 
-function requestVideoStream(source: string, range: string | null, redirectCount = 0): Promise<Response> {
-  return new Promise((resolve, reject) => {
-    const url = new URL(source);
-    const client = url.protocol === "http:" ? http : https;
-    const req = client.request(
-      url,
-      {
-        method: "GET",
-        headers: {
-          Accept: "video/mp4,video/*;q=0.9,*/*;q=0.8",
-          "User-Agent": "Mozilla/5.0",
-          ...(range ? { Range: range } : {}),
-        },
-        rejectUnauthorized: true,
-      },
-      (res) => {
-        const status = res.statusCode ?? 500;
-        const location = res.headers.location;
-        if (status >= 300 && status < 400 && location && redirectCount < 3) {
-          res.resume();
-          resolve(requestVideoStream(new URL(location, source).toString(), range, redirectCount + 1));
-          return;
-        }
-
-        const headers = new Headers();
-        for (const name of ["accept-ranges", "cache-control", "content-length", "content-range", "content-type", "etag", "last-modified"]) {
-          const value = res.headers[name];
-          if (typeof value === "string") headers.set(name, value);
-        }
-
-        resolve(
-          new Response(Readable.toWeb(res) as ReadableStream, {
-            status,
-            headers,
-          }),
-        );
-      },
-    );
-
-    req.setTimeout(20_000, () => req.destroy(new Error("Request timeout")));
-    req.on("error", reject);
-    req.end();
+function requestVideoStream(source: string, range: string | null) {
+  return safeMediaFetch(source, isAllowedVideoUrl, {
+    headers: {
+      Accept: "video/mp4,video/*;q=0.9,*/*;q=0.8",
+      "User-Agent": "Mozilla/5.0",
+      ...(range ? { Range: range } : {}),
+    },
+    cache: "no-store",
+    signal: AbortSignal.timeout(20_000),
   });
 }
 
@@ -145,11 +105,9 @@ export async function GET(request: NextRequest) {
       select: { id: true },
     });
     if (!content) return Response.json({ message: "Konten tidak ditemukan." }, { status: 404 });
-    const subscription = await db.subscription.findFirst({
-      where: { userId: user.id, status: { in: ["ACTIVE", "TRIAL", "GRACE"] }, expiresAt: { gt: new Date() } },
-      select: { id: true },
-    });
-    if (!subscription) return Response.json({ message: "Langganan aktif diperlukan." }, { status: 402 });
+    if (!(await playbackAccess(user.id, episode)).allowed) {
+      return Response.json({ message: "Langganan aktif diperlukan." }, { status: 402 });
+    }
   }
 
   if (!source && contentId) {
