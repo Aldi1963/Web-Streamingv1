@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, ChevronDown, ClipboardCopy, Eye, EyeOff, LockKeyhole, Mail, Save, ShieldCheck, WalletCards } from "lucide-react";
+import { Bot, CheckCircle2, ChevronDown, ClipboardCopy, Eye, EyeOff, KeyRound, LockKeyhole, Mail, Save, ShieldCheck, WalletCards } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 type Setting = { key: string; value: string; sensitive: boolean; configured: boolean };
@@ -23,6 +23,9 @@ const labels: Record<string, { label: string; help: string }> = {
   MAIL_USERNAME: { label: "SMTP username", help: "Username autentikasi SMTP." },
   MAIL_PASSWORD: { label: "SMTP password", help: "Password atau app password SMTP." },
   MAIL_FROM_ADDRESS: { label: "Alamat pengirim", help: "Alamat From untuk email sistem." },
+  GOOGLE_CLIENT_ID: { label: "Google client ID", help: "Client ID dari Google Cloud OAuth consent." },
+  GOOGLE_CLIENT_SECRET: { label: "Google client secret", help: "Secret OAuth Google. Disimpan terenkripsi." },
+  GOOGLE_REDIRECT_URI: { label: "Google redirect URI", help: "Callback URL yang didaftarkan di Google Cloud." },
   CLOUDFLARE_TURNSTILE_SITE_KEY: { label: "Turnstile site key", help: "Kunci publik challenge anti-bot." },
   CLOUDFLARE_TURNSTILE_SECRET_KEY: { label: "Turnstile secret key", help: "Kunci privat verifikasi Turnstile." },
   CRON_SECRET: { label: "Cron secret", help: "Token untuk melindungi endpoint sinkronisasi terjadwal." },
@@ -49,7 +52,9 @@ const paymentProviders = [
 ];
 const systemGroups: Group[] = [
   { title: "Email sistem", description: "Konfigurasi SMTP untuk verifikasi, invoice, dan notifikasi.", icon: Mail, keys: ["MAIL_HOST","MAIL_PORT","MAIL_USERNAME","MAIL_PASSWORD","MAIL_FROM_ADDRESS"] },
-  { title: "Keamanan & otomasi", description: "Perlindungan bot dan akses proses terjadwal.", icon: ShieldCheck, keys: ["CLOUDFLARE_TURNSTILE_SITE_KEY","CLOUDFLARE_TURNSTILE_SECRET_KEY","CRON_SECRET"] },
+  { title: "Login Google", description: "Client OAuth untuk tombol masuk atau daftar memakai akun Google.", icon: KeyRound, keys: ["GOOGLE_CLIENT_ID","GOOGLE_CLIENT_SECRET","GOOGLE_REDIRECT_URI"] },
+  { title: "Captcha Cloudflare", description: "Turnstile untuk mengurangi spam login, register, dan form publik.", icon: Bot, keys: ["CLOUDFLARE_TURNSTILE_SITE_KEY","CLOUDFLARE_TURNSTILE_SECRET_KEY"] },
+  { title: "Keamanan & otomasi", description: "Secret internal untuk endpoint cron dan pekerjaan terjadwal.", icon: ShieldCheck, keys: ["CRON_SECRET"] },
 ];
 
 export function AdminSettingsForm({
@@ -90,7 +95,7 @@ export function AdminSettingsForm({
     const next = Object.fromEntries(data.settings.map((item: Setting) => [item.key, item.value]));
     setSettings(data.settings); setValues(next); setInitial(next); setMessage(data.message); setState("saved");
   }
-  async function testConfiguration(target: "email"|"security"|"payment") {
+  async function testConfiguration(target: "email"|"google"|"security"|"payment") {
     setTesting(true); setMessage("");
     const response = await fetch("/api/admin/settings/test",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({target})});
     const data = await response.json(); setMessage(data.message); setTesting(false); setState(response.ok?"saved":"error");
@@ -141,6 +146,6 @@ export function AdminSettingsForm({
         return renderField(key);
       })}</div>
     </section>)}
-    <div className="settings-savebar"><div>{message || (dirty ? "Ada perubahan yang belum disimpan." : "Semua perubahan telah tersimpan.")}</div><div className="settings-save-actions">{section==="payment-settings"?<button type="button" className="btn btn-secondary" disabled={dirty||testing} onClick={()=>testConfiguration("payment")}>{testing?"Menguji…":"Uji payment"}</button>:<><button type="button" className="btn btn-secondary" disabled={dirty||testing} onClick={()=>testConfiguration("email")}>Uji SMTP</button><button type="button" className="btn btn-secondary" disabled={dirty||testing} onClick={()=>testConfiguration("security")}>Uji Turnstile</button></>}<button className="btn" disabled={!dirty || state === "saving"}><Save size={17}/>{state === "saving" ? "Menyimpan…" : "Simpan perubahan"}</button></div></div>
+    <div className="settings-savebar"><div>{message || (dirty ? "Ada perubahan yang belum disimpan." : "Semua perubahan telah tersimpan.")}</div><div className="settings-save-actions">{section==="payment-settings"?<button type="button" className="btn btn-secondary" disabled={dirty||testing} onClick={()=>testConfiguration("payment")}>{testing?"Menguji…":"Uji payment"}</button>:<><button type="button" className="btn btn-secondary" disabled={dirty||testing} onClick={()=>testConfiguration("email")}>Uji SMTP</button><button type="button" className="btn btn-secondary" disabled={dirty||testing} onClick={()=>testConfiguration("google")}>Uji Google</button><button type="button" className="btn btn-secondary" disabled={dirty||testing} onClick={()=>testConfiguration("security")}>Uji Captcha</button></>}<button className="btn" disabled={!dirty || state === "saving"}><Save size={17}/>{state === "saving" ? "Menyimpan…" : "Simpan perubahan"}</button></div></div>
   </form>;
 }

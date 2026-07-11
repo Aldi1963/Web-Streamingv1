@@ -7,7 +7,7 @@ import { getSetting } from "@/lib/settings";
 export async function POST(request: Request) {
   const user = await auth.currentUser();
   if (!user || !["SUPER_ADMIN","ADMIN"].includes(user.role)) return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-  const { target } = z.object({ target: z.enum(["email","security","payment"]) }).parse(await request.json());
+  const { target } = z.object({ target: z.enum(["email","google","security","payment"]) }).parse(await request.json());
   if (target === "email") {
     const [host,port,username,password,from] = await Promise.all([getSetting("MAIL_HOST"),getSetting("MAIL_PORT"),getSetting("MAIL_USERNAME"),getSetting("MAIL_PASSWORD"),getSetting("MAIL_FROM_ADDRESS")]);
     if (!host || !username || !password || !from) return NextResponse.json({ message: "Konfigurasi SMTP belum lengkap." }, { status: 422 });
@@ -18,6 +18,20 @@ export async function POST(request: Request) {
     } catch (error) {
       return NextResponse.json({ message: `SMTP gagal: ${error instanceof Error ? error.message : "koneksi ditolak"}` }, { status: 502 });
     }
+  }
+  if (target === "google") {
+    const [clientId, clientSecret, redirectUri] = await Promise.all([
+      getSetting("GOOGLE_CLIENT_ID"),
+      getSetting("GOOGLE_CLIENT_SECRET"),
+      getSetting("GOOGLE_REDIRECT_URI"),
+    ]);
+    if (!clientId || !clientSecret) {
+      return NextResponse.json({ message: "Google client ID dan client secret belum lengkap." }, { status: 422 });
+    }
+    if (redirectUri && !/^https?:\/\//i.test(redirectUri)) {
+      return NextResponse.json({ message: "Google redirect URI harus URL lengkap http/https." }, { status: 422 });
+    }
+    return NextResponse.json({ message: "Konfigurasi Google OAuth tersimpan. Login penuh diuji lewat tombol login Google." });
   }
   if (target === "security") {
     const secret = await getSetting("CLOUDFLARE_TURNSTILE_SECRET_KEY");
