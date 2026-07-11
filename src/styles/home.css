@@ -55,8 +55,15 @@
 .progress-overlay{position:absolute;left:10px;right:10px;bottom:10px}
 .progress-overlay-bar{height:6px;border-radius:999px;background:#ffffff1a;overflow:hidden;box-shadow:0 0 0 1px #0006}
 .progress-overlay-bar span{display:block;height:100%;background:linear-gradient(90deg,var(--brand),#ff6b7a)}
-.progress-meta{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;font-size:.76rem;color:var(--muted)}
-.progress-meta-rating{display:inline-flex;align-items:center;gap:3px;color:var(--gold);font-weight:700}
+.progress-meta{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;font-size:.74rem;color:var(--muted)}
+.progress-meta>span{display:inline-flex;align-items:center;gap:5px;min-width:0;white-space:nowrap}
+.progress-meta strong{color:var(--text2);font-size:.74rem}
+.progress-resume{display:grid;grid-template-columns:16px minmax(0,1fr) auto;align-items:center;gap:7px;min-height:38px;margin-top:12px;padding:0 10px;border:1px solid color-mix(in srgb,var(--brand) 72%,#fff 12%);border-radius:6px;background:var(--brand);color:#fff;font-size:.78rem;font-weight:800;line-height:1;transition:background var(--transition),border-color var(--transition),transform var(--transition)}
+.progress-resume svg{flex:0 0 auto}
+.progress-resume small{padding-left:8px;border-left:1px solid #ffffff40;color:#fff;font-size:.68rem;font-weight:750;white-space:nowrap}
+.progress-card:hover .progress-resume{background:color-mix(in srgb,var(--brand) 84%,#fff);border-color:color-mix(in srgb,var(--brand) 68%,#fff);transform:translateY(-1px)}
+.progress-resume.replay{background:var(--panel2);border-color:var(--line2);color:var(--text)}
+.progress-resume.replay small{border-left-color:var(--line2);color:var(--text2)}
 
 /* --- SKELETON --- */
 .skeleton{background:linear-gradient(90deg,var(--panel) 25%,var(--panel2) 50%,var(--panel) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:var(--radius)}

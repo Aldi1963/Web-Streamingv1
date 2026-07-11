@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Clock3, Play, Star } from "lucide-react";
+import { Clock3, Play } from "lucide-react";
 import { isProgressCompleted } from "@/lib/watch-progress";
 import { OptimizedImage } from "@/components/optimized-image";
 
@@ -119,10 +119,14 @@ export function WatchProgressGrid({
                   {item.content.type}
                 </div>
                 <div className="progress-meta">
-                  <span>{formatTime(item.positionSeconds)} / {formatTime(item.durationSeconds)}</span>
-                  <span className="progress-meta-rating"><Star size={10} fill="currentColor" /> {percent}%</span>
+                  <span><Clock3 size={12} />{formatTime(item.positionSeconds)} / {formatTime(item.durationSeconds)}</span>
+                  <strong>{percent}%</strong>
                 </div>
-                <span className="progress-resume"><Clock3 size={12} /> Lanjut nonton</span>
+                <span className={`progress-resume${completed ? " replay" : ""}`}>
+                  <Play size={14} fill="currentColor" />
+                  <span>{completed ? "Tonton lagi" : "Lanjut menonton"}</span>
+                  {episode && <small>Ep {episode.episodeNumber}</small>}
+                </span>
               </div>
             </Link>
           );

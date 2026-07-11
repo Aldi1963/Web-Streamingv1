@@ -10,6 +10,8 @@
 .dashboard-home-main>.section:last-child .grid{grid-template-columns:repeat(6,minmax(0,1fr))}
 .dashboard-home-main .card-body{padding:10px 2px 0}
 .dashboard-home-main .card-body h3{font-size:.9rem}
+.dashboard-home-main .progress-card .card-body{display:flex;flex-direction:column;min-height:154px}
+.dashboard-home-main .progress-card .progress-resume{margin-top:auto}
 .dashboard-home-rail{position:sticky;top:24px;display:grid;gap:12px;min-width:0}
 .dashboard-subscription-card{display:grid;gap:18px;padding:18px;background:var(--panel);border:1px solid var(--line2);border-radius:8px}
 .dashboard-subscription-card>.btn{width:100%;justify-content:center}
@@ -139,5 +141,6 @@
   .dashboard-home-rail{position:static;order:-1;width:100%}
   .dashboard-home-main{width:100%;gap:24px}
   .dashboard-home-main .continue-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .dashboard-home-main .progress-card .card-body{min-height:146px}
   .dashboard-home-main>.section:last-child .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
   .dashboard-secondary-content{grid-template-columns:1fr}
