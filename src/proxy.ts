@@ -3,6 +3,14 @@ import type { NextRequest } from "next/server";
 
 export function proxy(request: NextRequest) {
   const response = NextResponse.next();
+  const { pathname } = request.nextUrl;
+
+  if ((request.method === "GET" || request.method === "HEAD") && pathname === "/") {
+    response.headers.set(
+      "Cache-Control",
+      "public, max-age=300, s-maxage=300, stale-while-revalidate=1800"
+    );
+  }
 
   // Security headers
   response.headers.set("X-Content-Type-Options", "nosniff");

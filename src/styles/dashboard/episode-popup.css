@@ -1,0 +1,12 @@
+.episode-popup-trigger{background:#0009;border-color:#ffffff30}
+.episode-count{display:grid;place-items:center;min-width:21px;height:21px;padding:0 5px;background:var(--brand);border-radius:999px;color:white;font-size:.68rem}
+.episode-popup-overlay{position:fixed;inset:0;z-index:1000;display:flex;justify-content:flex-end;background:#000b;backdrop-filter:blur(5px);animation:fadeIn .2s ease}
+.episode-popup{width:min(440px,100%);height:100%;display:flex;flex-direction:column;background:var(--bg2);border-left:1px solid var(--line2);box-shadow:-16px 0 50px #0009;animation:episodeSlide .28s ease}
+@keyframes episodeSlide{from{transform:translateX(100%)}to{transform:translateX(0)}}
+.episode-popup-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:22px;border-bottom:1px solid var(--line)}
+.episode-popup-header h2{margin:0 0 4px;font-size:1.25rem}
+.episode-popup-header p{margin:0;color:var(--muted);font-size:.82rem}
+.episode-popup-list{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));align-content:start;gap:6px;padding:14px;overflow-y:auto;overscroll-behavior:contain}
+.episode-popup-item{display:grid;place-items:center;height:38px;padding:3px;border:1px solid var(--line2);border-radius:7px;background:var(--panel);font-size:.78rem;font-weight:750;transition:all var(--transition)}
+.episode-popup-item:hover{background:var(--panel);border-color:var(--line2)}
+.episode-popup-item.active{background:var(--brand-glow);border-color:#e5091466}

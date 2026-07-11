@@ -49,7 +49,7 @@ export function EpisodeList({
   return (
     <section className="section">
       <div className="section-header">
-        <h2>📺 Episode ({episodes.length})</h2>
+        <h2>Episode ({episodes.length})</h2>
       </div>
       <div className="detail-episode-grid">
         {episodes.map((ep) => (

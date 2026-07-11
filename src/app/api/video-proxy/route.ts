@@ -3,31 +3,17 @@ import https from "node:https";
 import http from "node:http";
 import { Readable } from "node:stream";
 import { clipku } from "@/services/clipku-api-service";
+import { isProxyableMediaUrl } from "@/lib/stream-utils";
 import { auth } from "@/services/auth-service";
 import { db } from "@/lib/db";
-import { playbackAccess } from "@/services/playback-access-service";
 
 export const dynamic = "force-dynamic";
 
-const PROXYABLE_PROVIDERS = new Set(["dramabox", "netshort", "moviebox", "melolo"]);
-const INSECURE_TLS_HOSTS = new Set(["awscdn.netshort.com"]);
+const PROXYABLE_PROVIDERS = new Set(["dramabox", "netshort", "melolo"]);
+const FREE_EPISODE_LIMIT = 8;
 
 function isAllowedVideoUrl(value: string) {
-  try {
-    const url = new URL(value);
-    return url.protocol === "https:" &&
-      (
-        url.hostname === "dramaboxdb.com" ||
-        url.hostname.endsWith(".dramaboxdb.com") ||
-        url.hostname === "awscdn.netshort.com" ||
-        url.hostname.endsWith(".netshort.com") ||
-        url.hostname === "bcdn.hakunaymatata.com" ||
-        url.hostname.endsWith(".hakunaymatata.com") ||
-        url.hostname === "proxy.sonzaixlab.workers.dev"
-      );
-  } catch {
-    return false;
-  }
+  return isProxyableMediaUrl(value);
 }
 
 function extractStreamUrl(value: unknown, depth = 0): string | null {
@@ -49,7 +35,7 @@ function extractStreamUrl(value: unknown, depth = 0): string | null {
   }
   if (typeof value === "object") {
     const record = value as Record<string, unknown>;
-    for (const key of ["play_url", "url", "stream_url", "hls_url", "filePath", "video_url", "resourceLink", "main_url", "backup_url", "source"]) {
+    for (const key of ["play_url", "url", "stream_url", "hls_url", "filePath", "video_url", "main_url", "backup_url", "source", "resourceLink"]) {
       const item = record[key];
       if (typeof item === "string" && /^https?:\/\//i.test(item) && isAllowedVideoUrl(item)) return item;
     }
@@ -74,12 +60,25 @@ function selectEpisodePayload(raw: unknown, provider: string, episode: number): 
   return raw;
 }
 
+async function authorizeDbContent(contentId: string | null, episode: number) {
+  if (!contentId) return false;
+  const content = await db.content.findFirst({
+    where: { id: contentId, isActive: true },
+    select: { id: true },
+  });
+  if (!content) return false;
+  if (episode <= FREE_EPISODE_LIMIT) return true;
+  const user = await auth.currentUser();
+  if (!user) return false;
+  const subscription = await db.subscription.findFirst({
+    where: { userId: user.id, status: { in: ["ACTIVE", "TRIAL", "GRACE"] }, expiresAt: { gt: new Date() } },
+    select: { id: true },
+  });
+  return Boolean(subscription);
+}
+
 function requestVideoStream(source: string, range: string | null, redirectCount = 0): Promise<Response> {
   return new Promise((resolve, reject) => {
-    if (!isAllowedVideoUrl(source)) {
-      reject(new Error("Redirect video menuju host yang tidak diizinkan."));
-      return;
-    }
     const url = new URL(source);
     const client = url.protocol === "http:" ? http : https;
     const req = client.request(
@@ -91,19 +90,14 @@ function requestVideoStream(source: string, range: string | null, redirectCount 
           "User-Agent": "Mozilla/5.0",
           ...(range ? { Range: range } : {}),
         },
-        rejectUnauthorized: !INSECURE_TLS_HOSTS.has(url.hostname),
+        rejectUnauthorized: true,
       },
       (res) => {
         const status = res.statusCode ?? 500;
         const location = res.headers.location;
         if (status >= 300 && status < 400 && location && redirectCount < 3) {
           res.resume();
-          const redirectUrl = new URL(location, source).toString();
-          if (!isAllowedVideoUrl(redirectUrl)) {
-            reject(new Error("Redirect video menuju host yang tidak diizinkan."));
-            return;
-          }
-          resolve(requestVideoStream(redirectUrl, range, redirectCount + 1));
+          resolve(requestVideoStream(new URL(location, source).toString(), range, redirectCount + 1));
           return;
         }
 
@@ -129,30 +123,38 @@ function requestVideoStream(source: string, range: string | null, redirectCount 
 }
 
 export async function GET(request: NextRequest) {
-  const user = await auth.currentUser();
-  if (!user) return Response.json({ message: "Unauthorized" }, { status: 401 });
   const provider = request.nextUrl.searchParams.get("provider") ?? "dramabox";
   let source = request.nextUrl.searchParams.get("url");
   const contentId = request.nextUrl.searchParams.get("contentId") ?? request.nextUrl.searchParams.get("bookId");
+  const contentDbId = request.nextUrl.searchParams.get("contentDbId");
   const episode = Math.max(1, Number(request.nextUrl.searchParams.get("ep") ?? 1));
 
   if (!PROXYABLE_PROVIDERS.has(provider)) {
     return Response.json({ message: "Provider video tidak didukung." }, { status: 400 });
   }
-  if (!contentId) return Response.json({ message: "Konten wajib diisi." }, { status: 400 });
-  const content = await db.content.findFirst({
-    where: { providerSlug: provider, clipkuContentId: contentId },
-    select: { id: true },
-  });
-  if (!content) return Response.json({ message: "Konten tidak ditemukan." }, { status: 404 });
-  const access = await playbackAccess(user.id, episode);
-  if (!access.allowed) {
-    return Response.json({ message: "Episode 9 dan seterusnya memerlukan paket aktif." }, { status: 402 });
+
+  if (source && !await authorizeDbContent(contentDbId, episode)) {
+    return Response.json({ message: episode > FREE_EPISODE_LIMIT ? "Langganan aktif diperlukan." : "Akses media tidak valid." }, { status: episode > FREE_EPISODE_LIMIT ? 402 : 403 });
+  }
+
+  if (contentId && episode > FREE_EPISODE_LIMIT) {
+    const user = await auth.currentUser();
+    if (!user) return Response.json({ message: "Login diperlukan untuk melanjutkan." }, { status: 401 });
+    const content = await db.content.findFirst({
+      where: { providerSlug: provider, clipkuContentId: contentId, isActive: true },
+      select: { id: true },
+    });
+    if (!content) return Response.json({ message: "Konten tidak ditemukan." }, { status: 404 });
+    const subscription = await db.subscription.findFirst({
+      where: { userId: user.id, status: { in: ["ACTIVE", "TRIAL", "GRACE"] }, expiresAt: { gt: new Date() } },
+      select: { id: true },
+    });
+    if (!subscription) return Response.json({ message: "Langganan aktif diperlukan." }, { status: 402 });
   }
 
   if (!source && contentId) {
     try {
-      const payload = provider === "melolo"
+      const payload = provider === "melolo" || provider === "netshort"
         ? await clipku.getStreamV2(provider, contentId, episode)
         : await clipku.getStream(provider, contentId, episode);
       source = extractStreamUrl(selectEpisodePayload(payload, provider, episode));

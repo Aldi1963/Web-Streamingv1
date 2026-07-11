@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, CreditCard, Database, ExternalLink, Film, Home, Menu, Settings, ShieldCheck, Users, X } from "lucide-react";
+import { CreditCard, Database, ExternalLink, Film, Home, Menu, Settings, ShieldCheck, Users, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { ReactNode, useEffect, useState } from "react";
 
@@ -11,7 +11,6 @@ type AdminGroup = { label: string; restricted?: boolean; items: Array<[string, s
 const groups: AdminGroup[] = [
   { label: "Operasional", items: [
     ["/admin/dashboard", "Ringkasan", Home],
-    ["/admin/reports", "Laporan video", Activity],
   ] },
   { label: "Manajemen", restricted: true, items: [
     ["/admin/users", "Pengguna", Users],

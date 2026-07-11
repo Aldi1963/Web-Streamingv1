@@ -1,0 +1,16 @@
+# Clipku Streaming
+
+> Clipku Streaming adalah situs katalog dan streaming drama pendek dari berbagai provider.
+
+## Halaman utama
+
+- [Beranda](https://drama.clipku.com/): Provider, drama unggulan, dan rilisan terbaru.
+- [Populer](https://drama.clipku.com/popular): Daftar drama populer.
+- [Sitemap](https://drama.clipku.com/sitemap.xml): Daftar URL publik untuk crawler.
+
+## Panduan crawler
+
+- Gunakan halaman detail drama sebagai sumber judul, deskripsi, provider, dan daftar episode.
+- Jangan mengakses halaman akun, pembayaran, admin, atau endpoint API privat.
+- Informasi katalog dapat berubah saat sinkronisasi provider berlangsung.
+

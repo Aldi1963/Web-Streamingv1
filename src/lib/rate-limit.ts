@@ -25,8 +25,9 @@ export function rateLimit(opts: {
   const keyFn =
     opts.keyFn ??
     ((req: Request) =>
+      req.headers.get("cf-connecting-ip")?.trim() ??
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
       req.headers.get("x-real-ip") ??
-      req.headers.get("x-forwarded-for")?.split(",").at(-1)?.trim() ??
       "unknown");
 
   return async function check(req: Request) {
@@ -73,4 +74,9 @@ export const apiRateLimit = rateLimit({
 export const adminRateLimit = rateLimit({
   windowMs: 60_000,
   max: 120,
+});
+
+export const redeemRateLimit = rateLimit({
+  windowMs: 60_000,
+  max: 8,
 });

@@ -16,6 +16,22 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 
   const data = input.parse(await request.json());
+  const content = await db.content.findFirst({
+    where: { id: data.contentId, isActive: true },
+    select: { id: true },
+  });
+  if (!content) {
+    return NextResponse.json({ message: "Konten tidak ditemukan." }, { status: 404 });
+  }
+  if (data.episodeId) {
+    const episode = await db.episode.findFirst({
+      where: { id: data.episodeId, contentId: data.contentId },
+      select: { id: true },
+    });
+    if (!episode) {
+      return NextResponse.json({ message: "Episode tidak valid." }, { status: 422 });
+    }
+  }
   const existing = await db.watchProgress.findFirst({
     where: { userId: user.id, contentId: data.contentId, episodeId: data.episodeId ?? null },
     select: { id: true },

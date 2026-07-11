@@ -67,7 +67,7 @@ export function ProviderModal({
                 return (
                   <Link
                     key={p.slug}
-                    href={`/browse?provider=${p.slug}${qs}`}
+                    href={"/terbaru"}
                     className={`modal-tile${p.slug === current ? " active" : ""}`}
                     onClick={() => setOpen(false)}
                     prefetch={false}
@@ -80,7 +80,7 @@ export function ProviderModal({
               })}
             </div>
             {current && (
-              <Link href="/browse" className="btn btn-sm" style={{ width: "100%", justifyContent: "center", marginTop: 12 }} prefetch={false}>
+              <Link href="/terbaru" className="btn btn-sm" style={{ width: "100%", justifyContent: "center", marginTop: 12 }} prefetch={false}>
                 Tampilkan Semua
               </Link>
             )}

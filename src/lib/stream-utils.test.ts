@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { extractStreamUrl, selectEpisodePayload } from "./stream-utils";
+import { extractStreamUrl, isProxyableMediaUrl, proxyMediaUrl, selectEpisodePayload } from "./stream-utils";
 
 describe("stream-utils", () => {
   it("selects the requested GoodShort episode", () => {
@@ -12,10 +12,25 @@ describe("stream-utils", () => {
       .toBe("https://cdn.test/movie.mp4?token=x");
     expect(extractStreamUrl({ data: [{ hls_url: "https://cdn.test/master.m3u8" }] }))
       .toBe("https://cdn.test/master.m3u8");
+    expect(extractStreamUrl({ data: { resourceLink: "https://cdn.test/movie.mp4?token=x" } }))
+      .toBe("https://cdn.test/movie.mp4?token=x");
+    expect(extractStreamUrl({
+      "360p": "https://hls.drakor.cc/path/360.m3u8?token=x",
+      "720p": "https://hls.drakor.cc/path/720.m3u8?token=x",
+    })).toBe("https://hls.drakor.cc/path/720.m3u8?token=x");
   });
 
   it("rejects unrelated and non-http values", () => {
     expect(extractStreamUrl({ url: "javascript:alert(1)" })).toBeNull();
     expect(extractStreamUrl({ url: "https://example.com/page" })).toBeNull();
+  });
+
+  it("proxies supported media hosts through same-origin routes", () => {
+    expect(isProxyableMediaUrl("https://v-mps.crazymaplestudios.com/path/video.m3u8")).toBe(true);
+    expect(proxyMediaUrl("https://v-mps.crazymaplestudios.com/path/video.m3u8")).toContain("/api/hls-proxy?url=");
+    expect(proxyMediaUrl("https://v-mps.crazymaplestudios.com/path/video.mp4")).toContain("/api/video-proxy?url=");
+    expect(proxyMediaUrl("https://bcdn.hakunaymatata.com/resource/video.mp4?sign=x")).toContain("/api/video-proxy?url=");
+    expect(proxyMediaUrl("https://api.clipku.com/goodshort/proxy/m3u8?url=https%3A%2F%2Fcdn.test%2Fmaster.m3u8"))
+      .toContain("/api/hls-proxy?url=");
   });
 });

@@ -27,6 +27,11 @@ export function LoginForm() {
     setLoading(false);
   }
 
+  const redirect = typeof window === "undefined" ? "" : new URLSearchParams(location.search).get("redirect");
+  const registerHref = redirect?.startsWith("/") && !redirect.startsWith("//")
+    ? `/register?redirect=${encodeURIComponent(redirect)}`
+    : "/register";
+
   return (
     <main className="auth-page">
       <div className="auth-card">
@@ -53,7 +58,7 @@ export function LoginForm() {
           <p style={{ color: "var(--muted)", fontSize: "0.9rem", margin: "0 0 12px" }}>
             Belum punya akun?
           </p>
-          <Link href="/register" className="btn btn-ghost" style={{ width: "100%", justifyContent: "center" }}>
+          <Link href={registerHref} className="btn btn-ghost" style={{ width: "100%", justifyContent: "center" }}>
             <UserPlus size={18} /> Daftar Sekarang
           </Link>
         </div>

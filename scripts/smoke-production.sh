@@ -15,7 +15,6 @@ check() {
 }
 
 check "/" "200"
-check "/browse" "200"
 check "/login" "200"
 check "/plans" "200"
 check "/api/health" "200"

@@ -45,7 +45,7 @@ export async function GET() {
         },
       }),
     ]);
-    checks.playback = { status: failed > 0 ? "degraded" : "ok", ok, degraded, failed, stale };
+    checks.playback = { status: failed > 0 || degraded > 0 ? "degraded" : "ok", ok, degraded, failed, stale };
   } catch {
     checks.playback = { status: "unknown" };
   }

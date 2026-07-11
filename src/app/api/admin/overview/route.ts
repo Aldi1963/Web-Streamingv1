@@ -2,42 +2,27 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/services/auth-service";
 import { db } from "@/lib/db";
 import { activatePayment } from "@/services/payment-activation-service";
+import { expirePendingPayments } from "@/services/payment-expiry-service";
 
 async function permitted() {
   const user = await auth.currentUser();
   return user && ["SUPER_ADMIN", "ADMIN", "CONTENT_MANAGER"].includes(user.role) ? user : null;
 }
 
-const roleRank: Record<string, number> = {
-  USER: 0,
-  SUBSCRIBER: 0,
-  CONTENT_MANAGER: 1,
-  ADMIN: 2,
-  SUPER_ADMIN: 3,
-};
-
-async function canManageUser(actor: { id: string; role: string }, targetId: string) {
-  if (actor.id === targetId) return false;
-  const target = await db.user.findUnique({
-    where: { id: targetId },
-    select: { role: true },
-  });
-  return Boolean(target && roleRank[actor.role] > roleRank[target.role]);
-}
-
 export async function GET(request: NextRequest) {
   const user = await permitted();
   if (!user) return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+  await expirePendingPayments();
   const section = request.nextUrl.searchParams.get("section") || "dashboard";
-  const [users, contents, endpoints, payments, activeSubscriptions, failedSyncs] = await Promise.all([
+  const includeSummary = section === "dashboard";
+  const summary = includeSummary ? await Promise.all([
     db.user.count(), db.content.count(), db.apiEndpoint.count(), db.payment.count(),
     db.subscription.count({ where: { status: "ACTIVE", expiresAt: { gt: new Date() } } }),
     db.apiSyncLog.count({ where: { status: { not: "SUCCESS" } } }),
-  ]);
-  const stats = { users, contents, endpoints, payments, activeSubscriptions, failedSyncs };
+  ]).then(([users, contents, endpoints, payments, activeSubscriptions, failedSyncs]) => ({ users, contents, endpoints, payments, activeSubscriptions, failedSyncs })) : null;
   if (section === "users") {
     if (user.role === "CONTENT_MANAGER") return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-    return NextResponse.json({ stats, rows: await db.user.findMany({
+    return NextResponse.json({ stats: summary, rows: await db.user.findMany({
       take: 100, orderBy: { createdAt: "desc" },
       select: { id: true, name: true, email: true, role: true, isSuspended: true, emailVerifiedAt: true, createdAt: true,
         _count: { select: { sessions: true, subscriptions: true } } },
@@ -45,43 +30,39 @@ export async function GET(request: NextRequest) {
   }
   if (section === "subscriptions") {
     if (user.role === "CONTENT_MANAGER") return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-    return NextResponse.json({ stats, rows: await db.subscription.findMany({
+    return NextResponse.json({ stats: summary, rows: await db.subscription.findMany({
       take: 100, orderBy: { expiresAt: "desc" },
       select: { id: true, status: true, startsAt: true, expiresAt: true, user: { select: { email: true } }, plan: { select: { name: true } } },
     }) });
   }
   if (section === "devices") {
     if (user.role === "CONTENT_MANAGER") return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-    return NextResponse.json({ stats, rows: await db.deviceSession.findMany({
+    return NextResponse.json({ stats: summary, rows: await db.deviceSession.findMany({
       take: 100, orderBy: { lastActiveAt: "desc" },
       select: { id: true, deviceName: true, browser: true, ip: true, lastActiveAt: true, expiresAt: true, user: { select: { email: true } } },
     }) });
   }
-  if (section === "reports") return NextResponse.json({ stats, rows: await db.playbackReport.findMany({
-    take: 100, orderBy: { createdAt: "desc" },
-    select: { id: true, contentId: true, episodeId: true, category: true, detail: true, status: true, resolution: true, createdAt: true,
-      user: { select: { email: true } } },
-  }) });
   if (["payments", "invoices"].includes(section)) {
     if (user.role === "CONTENT_MANAGER") return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-    return NextResponse.json({ stats, rows: await db.payment.findMany({
+    return NextResponse.json({ stats: summary, rows: await db.payment.findMany({
       take: 100, orderBy: { createdAt: "desc" },
       select: { id: true, invoiceNumber: true, provider: true, amount: true, status: true, paidAt: true, createdAt: true,
+        expiresAt: true,
         user: { select: { email: true } } },
     }) });
   }
   if (["contents", "providers", "categories"].includes(section)) return NextResponse.json({
-    stats, rows: await db.content.findMany({ take: 100, orderBy: { updatedAt: "desc" },
+    stats: summary, rows: await db.content.findMany({ take: 100, orderBy: { updatedAt: "desc" },
       select: { id: true, title: true, providerName: true, type: true, isActive: true, isFeatured: true, lastSyncedAt: true,
         _count: { select: { episodes: true } } } }),
   });
   if (section.includes("logs")) return NextResponse.json({
-    stats, rows: section === "logs" ? await db.adminAuditLog.findMany({ take: 100, orderBy: { createdAt: "desc" } }) :
+    stats: summary, rows: section === "logs" ? await db.adminAuditLog.findMany({ take: 100, orderBy: { createdAt: "desc" } }) :
       await db.apiLog.findMany({ take: 100, orderBy: { createdAt: "desc" },
         select: { id: true, providerName: true, method: true, url: true, responseStatus: true, responseTime: true, errorMessage: true, createdAt: true } }),
   });
-  const recentSyncs = await db.apiSyncLog.findMany({ take: 10, orderBy: { startedAt: "desc" } });
-  return NextResponse.json({ stats, recentSyncs });
+  const recentSyncs = includeSummary ? await db.apiSyncLog.findMany({ take: 10, orderBy: { startedAt: "desc" } }) : undefined;
+  return NextResponse.json({ stats: summary, ...(recentSyncs ? { recentSyncs } : {}) });
 }
 
 export async function PATCH(request: NextRequest) {
@@ -101,17 +82,12 @@ export async function PATCH(request: NextRequest) {
   }
   if (user.role === "CONTENT_MANAGER") return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   if (body.type === "logout-devices") {
-    if (!await canManageUser(user, body.id)) {
-      return NextResponse.json({ message: "Tidak dapat mengelola sesi pengguna dengan role setara atau lebih tinggi." }, { status: 403 });
-    }
     const result = await db.deviceSession.deleteMany({ where: { userId: body.id } });
     await db.adminAuditLog.create({data:{adminId:user.id,action:"LOGOUT_DEVICES",entityType:"User",entityId:body.id,detail:{count:result.count}}});
     return NextResponse.json({ message: `${result.count} sesi perangkat dihapus.` });
   }
   if (body.type === "user-suspended") {
-    if (!await canManageUser(user, body.id)) {
-      return NextResponse.json({ message: "Tidak dapat menonaktifkan pengguna dengan role setara atau lebih tinggi." }, { status: 403 });
-    }
+    if (body.id === user.id) return NextResponse.json({ message: "Tidak dapat menonaktifkan akun sendiri." }, { status: 422 });
     const suspended = Boolean(body.value);
     const result = await db.$transaction([
       db.user.update({ where: { id: body.id }, data: { isSuspended: suspended, suspendedAt: suspended ? new Date() : null } }),
@@ -135,15 +111,7 @@ export async function PATCH(request: NextRequest) {
     await db.adminAuditLog.create({data:{adminId:user.id,action:"SUBSCRIPTION_CANCEL",entityType:"Subscription",entityId:body.id}});
     return NextResponse.json({ message: "Langganan dibatalkan.", result });
   }
-  if (body.type === "report-resolve") {
-    const result = await db.playbackReport.update({ where: { id: body.id }, data: { status: "RESOLVED", resolution: body.detail?.slice(0, 1000) || "Diperiksa admin." } });
-    await db.adminAuditLog.create({data:{adminId:user.id,action:"REPORT_RESOLVE",entityType:"PlaybackReport",entityId:body.id}});
-    return NextResponse.json({ message: "Laporan diselesaikan.", result });
-  }
   if (body.type === "payment-paid") {
-    if (user.role !== "SUPER_ADMIN") {
-      return NextResponse.json({ message: "Hanya SUPER_ADMIN dapat mengaktifkan pembayaran manual." }, { status: 403 });
-    }
     const reason = body.detail?.trim();
     if (!reason || reason.length < 8) return NextResponse.json({message:"Alasan aktivasi manual minimal 8 karakter."},{status:422});
     const result = await activatePayment(body.id,{admin:{id:user.id,reason}});

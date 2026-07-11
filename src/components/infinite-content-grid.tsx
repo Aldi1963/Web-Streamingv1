@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Play } from "lucide-react";
+import { Play, Star } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ContentCardMetrics } from "@/components/content-card-metrics";
 import { OptimizedImage } from "@/components/optimized-image";
@@ -21,10 +21,12 @@ type ContentItem = {
 
 export function InfiniteContentGrid({
   provider,
+  sort = "latest",
   initialItems,
   initialCursor,
 }: {
   provider: string;
+  sort?: "latest" | "popular" | "recommended";
   initialItems: ContentItem[];
   initialCursor: string | null;
 }) {
@@ -33,6 +35,13 @@ export function InfiniteContentGrid({
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
   const sentinel = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setItems(initialItems);
+    setCursor(initialCursor);
+    setLoading(false);
+    setFailed(false);
+  }, [initialItems, initialCursor, provider, sort]);
 
   const loadMore = useCallback(async () => {
     if (!cursor || loading) return;
@@ -44,6 +53,7 @@ export function InfiniteContentGrid({
         paginate: "1",
         limit: "18",
         cursor,
+        sort,
       });
       const response = await fetch(`/api/contents?${params}`, { cache: "no-store" });
       if (!response.ok) throw new Error("Gagal memuat katalog");
@@ -58,7 +68,7 @@ export function InfiniteContentGrid({
     } finally {
       setLoading(false);
     }
-  }, [cursor, loading, provider]);
+  }, [cursor, loading, provider, sort]);
 
   useEffect(() => {
     const target = sentinel.current;
@@ -77,6 +87,12 @@ export function InfiniteContentGrid({
           {item.posterUrl
             ? <OptimizedImage src={item.posterUrl} alt={item.title} />
             : <div className="placeholder"><span><Play size={30} /></span></div>}
+          {item.rating ? (
+            <span className="card-badge-rating">
+              <Star size={10} fill="currentColor" />
+              {item.rating.toFixed(1).replace(".0", "")}
+            </span>
+          ) : null}
         </div>
         <div className="card-body">
           <h3>{item.title}</h3>

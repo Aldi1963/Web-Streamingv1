@@ -30,6 +30,7 @@ export function apiError(error: unknown, context?: Record<string, unknown>) {
   const message = error instanceof Error ? error.message : "Terjadi kesalahan.";
   const known = [
     "API Clipku sedang bermasalah",
+    "User Gratis",
     "Video belum tersedia",
     "Playback URL",
     "langganan",
@@ -48,4 +49,3 @@ export function apiError(error: unknown, context?: Record<string, unknown>) {
     { status: isAuth ? 401 : 500 }
   );
 }
-

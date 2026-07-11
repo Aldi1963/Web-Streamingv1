@@ -43,6 +43,60 @@ Dokumen ini berisi endpoint internal yang paling sering dipakai saat pengembanga
 - `POST /api/payment/webhook`
 - `GET /api/payment/status/{invoiceId}`
 
+## Reseller Voucher API
+
+Endpoint reseller memakai header `Authorization: Bearer {apiKeyReseller}`.
+
+- `GET /api/reseller/plans`
+  - Cek saldo reseller dan daftar paket aktif.
+  - Response utama: `reseller.id`, `reseller.name`, `reseller.balance`, dan `plans[]`.
+- `POST /api/reseller/vouchers`
+  - Buat voucher memakai saldo reseller.
+  - Body: `planId` atau `planSlug`, `quantity` 1-50, `externalRef` unik, opsional `expiresInDays`.
+- `GET /api/reseller/vouchers/{externalRef}`
+  - Cek status order voucher berdasarkan `externalRef`.
+  - Response utama: `order.status`, `order.amount`, `plan`, dan `vouchers[]` berisi `code`, `status`, `redeemedAt`, `expiresAt`.
+
+Contoh cek saldo:
+
+```bash
+curl https://drama.clipku.com/api/reseller/plans \
+  -H "Authorization: Bearer ckrs_live_xxxxxxxxx"
+```
+
+Contoh cek status voucher:
+
+```bash
+curl https://drama.clipku.com/api/reseller/vouchers/ORDER-APP-001 \
+  -H "Authorization: Bearer ckrs_live_xxxxxxxxx"
+```
+
+## Admin Reseller API
+
+Endpoint admin memakai session admin web, bukan API key reseller.
+
+- `GET /api/admin/resellers`
+  - Lihat reseller, saldo, status aktif, dan pengajuan reseller pending.
+- `POST /api/admin/resellers`
+  - Buat reseller baru dan API key reseller.
+  - Body: `name`, `ownerEmail`, opsional `initialBalance`.
+- `PATCH /api/admin/resellers`
+  - Update reseller atau proses pengajuan.
+  - Untuk topup saldo, kirim `action: "UPDATE_RESELLER"`, `id`, dan `addBalance`.
+
+Contoh topup saldo via API admin:
+
+```bash
+curl -X PATCH https://drama.clipku.com/api/admin/resellers \
+  -H "Content-Type: application/json" \
+  -H "Cookie: clipku_session=ADMIN_SESSION_TOKEN" \
+  -d '{
+    "id": "clx_reseller_id",
+    "action": "UPDATE_RESELLER",
+    "addBalance": 100000
+  }'
+```
+
 ## Watchlist
 
 - `GET /api/watchlist`
@@ -69,4 +123,3 @@ Dokumen ini berisi endpoint internal yang paling sering dipakai saat pengembanga
 - `POST /api/admin/clipku/sync`
 - `GET /api/admin/clipku/logs`
 - `POST /api/admin/clipku/cache/clear`
-

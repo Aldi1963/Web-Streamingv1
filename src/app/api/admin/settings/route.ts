@@ -24,6 +24,12 @@ export async function PUT(request: NextRequest) {
     if (!allowed.has(key) || typeof rawValue !== "string" || rawValue.length > 4096) {
       return NextResponse.json({ message: `Setting ${key} tidak valid.` }, { status: 400 });
     }
+    if (key === "PAYMENT_TIMEOUT_MINUTES") {
+      const minutes = Number.parseInt(rawValue, 10);
+      if (!Number.isFinite(minutes) || minutes < 5 || minutes > 1440) {
+        return NextResponse.json({ message: "Batas waktu pembayaran harus 5-1440 menit." }, { status: 400 });
+      }
+    }
     // Secret kosong berarti pertahankan nilai lama, bukan menghapus tanpa sengaja.
     if (settingDefinitions[key as SettingKey].sensitive && rawValue === "") continue;
     await saveSetting(key as SettingKey, rawValue.trim(), user.id);

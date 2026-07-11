@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Play, Star } from "lucide-react";
+import { Clock3, Play, Star } from "lucide-react";
 import { isProgressCompleted } from "@/lib/watch-progress";
 import { OptimizedImage } from "@/components/optimized-image";
 
@@ -41,6 +41,11 @@ function progressPercent(positionSeconds: number, durationSeconds: number) {
   return Math.min(100, Math.max(0, Math.round((positionSeconds / durationSeconds) * 100)));
 }
 
+function resumeHref(item: WatchProgressItem) {
+  const episode = item.content.episodes?.find((ep) => ep.id === item.episodeId);
+  return episode ? `/watch/${item.contentId}?ep=${episode.episodeNumber}` : `/watch/${item.contentId}`;
+}
+
 export function WatchProgressGrid({
   title,
   items,
@@ -78,10 +83,10 @@ export function WatchProgressGrid({
           </Link>
         )}
       </div>
-      <div className="grid continue-grid">
+      <div className="grid continue-grid history-grid">
         {items.map((item) => {
           const episode = item.content.episodes?.find((ep) => ep.id === item.episodeId);
-          const href = episode ? `/watch/${item.contentId}?ep=${episode.episodeNumber}` : `/watch/${item.contentId}`;
+          const href = resumeHref(item);
           const percent = progressPercent(item.positionSeconds, item.durationSeconds);
           const completed = isProgressCompleted(item.positionSeconds, item.durationSeconds);
           return (
@@ -117,6 +122,7 @@ export function WatchProgressGrid({
                   <span>{formatTime(item.positionSeconds)} / {formatTime(item.durationSeconds)}</span>
                   <span className="progress-meta-rating"><Star size={10} fill="currentColor" /> {percent}%</span>
                 </div>
+                <span className="progress-resume"><Clock3 size={12} /> Lanjut nonton</span>
               </div>
             </Link>
           );

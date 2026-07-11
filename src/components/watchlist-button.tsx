@@ -8,10 +8,14 @@ export function WatchlistButton({
   contentId,
   initialSaved = false,
   loggedIn = false,
+  saveText = "Simpan",
+  savedText = "Tersimpan",
 }: {
   contentId: string;
   initialSaved?: boolean;
   loggedIn?: boolean;
+  saveText?: string;
+  savedText?: string;
 }) {
   const router = useRouter();
   const [saved, setSaved] = useState(initialSaved);
@@ -42,7 +46,7 @@ export function WatchlistButton({
       aria-pressed={saved}
     >
       <Heart size={17} fill={saved ? "currentColor" : "none"} />
-      {busy ? "Memproses…" : saved ? "Tersimpan" : "Simpan"}
+      {busy ? "Memproses…" : saved ? savedText : saveText}
     </button>
   );
 }

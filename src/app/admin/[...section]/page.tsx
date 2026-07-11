@@ -27,6 +27,7 @@ export default async function Admin({
     plans: "/admin/monetization?tab=plans",
     contents: "/admin/catalog?tab=contents",
     providers: "/admin/catalog?tab=providers",
+    reports: "/admin/dashboard",
     "api-clipku": "/admin/integrations?tab=api",
     "error-logs": "/admin/integrations?tab=monitoring",
     seo: "/admin/settings?tab=seo",
@@ -46,7 +47,9 @@ export default async function Admin({
   if (user.role === "CONTENT_MANAGER" && ["users","monetization","settings"].includes(section)) redirect("/admin/dashboard");
   const tab = group?.tabs.some(([value]) => value === requested) ? requested! : group?.fallback;
   const title = group?.title || section.replaceAll("-", " ");
-  const webhookUrl = `${(process.env.APP_URL || "https://drama.clipku.com").replace(/\/+$/,"")}/api/payments/aldiqris/webhook`;
+  const appUrl = (process.env.APP_URL || "https://drama.clipku.com").replace(/\/+$/,"");
+  const webhookUrl = `${appUrl}/api/payments/aldiqris/webhook`;
+  const clipkuPayWebhookUrl = `${appUrl}/api/payments/clipku-pay/webhook`;
 
   return <main className="admin-context"><AdminLayout role={user.role} title={title}>
     {group && <AdminSectionTabs base={`/admin/${section}`} active={tab} tabs={group.tabs}/>}
@@ -54,7 +57,7 @@ export default async function Admin({
       section === "monetization" ? (tab === "plans" ? <AdminPlans/> : <AdminConsole section={tab}/>) :
       section === "catalog" ? (tab === "providers" ? <AdminProviders/> : <AdminConsole section="contents"/>) :
       section === "integrations" ? (tab === "monitoring" ? <AdminMonitoring/> : <AdminIntegration/>) :
-      section === "settings" ? (tab === "seo" ? <AdminSeo/> : <AdminSettingsForm section={tab === "payment" ? "payment-settings" : "settings"} webhookUrl={webhookUrl}/>) :
+      section === "settings" ? (tab === "seo" ? <AdminSeo/> : <AdminSettingsForm section={tab === "payment" ? "payment-settings" : "settings"} webhookUrl={webhookUrl} clipkuPayWebhookUrl={clipkuPayWebhookUrl}/>) :
       <AdminConsole section={section}/>}
   </AdminLayout></main>;
 }

@@ -18,6 +18,11 @@ const updateInput = z.discriminatedUnion("action", [
   }),
 ]);
 
+function paymentPurpose(payload: unknown) {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) return "subscription";
+  return (payload as Record<string, unknown>).purpose === "redeem_code" ? "redeem_code" : "subscription";
+}
+
 export async function GET() {
   const user = await auth.currentUser();
   if (!user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
@@ -30,7 +35,22 @@ export async function GET() {
     }),
     db.payment.findMany({
       where: { userId: user.id },
-      select: { id: true, invoiceNumber: true, provider: true, amount: true, status: true, paidAt: true, expiresAt: true, createdAt: true },
+      select: {
+        id: true,
+        invoiceNumber: true,
+        provider: true,
+        amount: true,
+        status: true,
+        paidAt: true,
+        expiresAt: true,
+        createdAt: true,
+        payload: true,
+        redeemCodes: {
+          select: { id: true, status: true, redeemedAt: true, plan: { select: { name: true, durationDays: true } } },
+          orderBy: { createdAt: "desc" },
+          take: 1,
+        },
+      },
       orderBy: { createdAt: "desc" },
       take: 50,
     }),
@@ -41,7 +61,24 @@ export async function GET() {
     }),
     db.userPreference.findUnique({ where: { userId: user.id } }),
   ]);
-  return NextResponse.json({ profile, subscription, payments, devices, preferences });
+  return NextResponse.json({
+    profile,
+    subscription,
+    payments: payments.map(payment => ({
+      id: payment.id,
+      invoiceNumber: payment.invoiceNumber,
+      provider: payment.provider,
+      amount: payment.amount,
+      status: payment.status,
+      paidAt: payment.paidAt,
+      expiresAt: payment.expiresAt,
+      createdAt: payment.createdAt,
+      purpose: paymentPurpose(payment.payload),
+      redeemCode: payment.redeemCodes[0] ?? null,
+    })),
+    devices,
+    preferences,
+  });
 }
 
 export async function PATCH(request: Request) {

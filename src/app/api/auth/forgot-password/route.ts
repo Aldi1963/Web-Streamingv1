@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { apiError } from "@/lib/http";
-import { authRateLimit } from "@/lib/rate-limit";
+import { authRateLimit, rateLimit } from "@/lib/rate-limit";
 import { createResetToken } from "@/lib/password-reset";
 import { sendPasswordResetEmail } from "@/services/mail-service";
 
@@ -14,6 +14,13 @@ export async function POST(request: Request) {
 
   try {
     const { email } = schema.parse(await request.json());
+    const emailLimit = rateLimit({
+      windowMs: 60 * 60_000,
+      max: 3,
+      keyFn: () => `forgot:${email.toLowerCase()}`,
+    });
+    const emailLimitCheck = await emailLimit(request);
+    if (emailLimitCheck) return emailLimitCheck;
 
     // Always return success to prevent email enumeration
     const user = await db.user.findUnique({ where: { email } });
@@ -25,8 +32,16 @@ export async function POST(request: Request) {
         data: { rememberToken: tokenHash, rememberTokenExpiresAt: expiresAt },
       });
 
-      const appUrl = process.env.APP_URL ?? new URL(request.url).origin;
-      await sendPasswordResetEmail(email, `${appUrl}/reset-password?token=${encodeURIComponent(token)}`);
+      const origin = process.env.APP_URL || new URL(request.url).origin;
+      const resetUrl = `${origin.replace(/\/$/, "")}/reset-password?token=${token}`;
+      await sendPasswordResetEmail(user.email, resetUrl).catch((error) => {
+        console.error(JSON.stringify({
+          level: "error",
+          route: "forgot-password",
+          message: "Gagal mengirim email reset password.",
+          error: error instanceof Error ? error.message : String(error),
+        }));
+      });
     }
 
     return NextResponse.json({

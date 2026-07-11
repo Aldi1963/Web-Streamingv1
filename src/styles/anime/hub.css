@@ -1,0 +1,328 @@
+/* Anime latest-only and player audio note */
+.anime-latest-only {
+  padding-top: clamp(18px, 4vw, 40px);
+}
+
+.anime-latest-only .showcase-section {
+  margin-top: 0;
+}
+
+.anime-latest-only .showcase-section-head h1 {
+  margin: 0;
+  font-size: clamp(26px, 5vw, 44px);
+  line-height: 1.05;
+  letter-spacing: 0;
+}
+
+.anime-audio-note {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 14px;
+  padding: 10px 12px;
+  background: rgba(20, 184, 166, 0.12);
+  color: #ccfbf1;
+  font-size: 13px;
+}
+
+.anime-source-list a {
+  text-decoration: none;
+}
+
+/* Anime hub */
+.anime-hub {
+  padding-top: clamp(18px, 4vw, 40px);
+  padding-bottom: 72px;
+}
+
+.anime-hub-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 460px);
+  gap: 24px;
+  align-items: end;
+  margin-bottom: 18px;
+}
+
+.anime-hub-copy h1 {
+  margin: 4px 0 10px;
+  max-width: 760px;
+  font-size: clamp(34px, 6vw, 64px);
+  line-height: 1.02;
+  letter-spacing: 0;
+}
+
+.anime-hub-copy p:last-child {
+  margin: 0;
+  max-width: 620px;
+  color: var(--text2);
+  font-size: clamp(15px, 2vw, 18px);
+}
+
+.anime-metric-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.anime-metric {
+  padding: 12px 14px;
+  border: 1px solid #ffffff17;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #ffffff10, #ffffff06);
+}
+
+.anime-metric span,
+.anime-section-note {
+  display: block;
+  color: var(--text2);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.anime-metric strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--text);
+  font-size: 18px;
+  line-height: 1;
+}
+
+.anime-searchbar {
+  min-height: 56px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 8px 8px 16px;
+  border: 1px solid #ffffff18;
+  border-radius: 18px;
+  background: #ffffff0d;
+  color: var(--text2);
+}
+
+.anime-searchbar input {
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+}
+
+.anime-searchbar input::placeholder {
+  color: #ffffff80;
+}
+
+.anime-searchbar button,
+.anime-pagination a {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 0;
+  border-radius: 12px;
+  padding: 0 15px;
+  background: #14b8a6;
+  color: #042f2e;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.anime-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px 0 18px;
+  scrollbar-width: none;
+}
+
+.anime-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.anime-tabs a {
+  flex: 0 0 auto;
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid #ffffff18;
+  border-radius: 999px;
+  padding: 0 14px;
+  background: #ffffff08;
+  color: var(--text2);
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.anime-tabs a.active {
+  border-color: #2dd4bf80;
+  background: #14b8a629;
+  color: #ccfbf1;
+}
+
+.anime-featured-section,
+.anime-rail-section,
+.anime-schedule-section,
+.anime-list-section {
+  margin-top: 16px;
+}
+
+.anime-featured-section .showcase-section-head h2,
+.anime-rail-section .showcase-section-head h2,
+.anime-schedule-section .showcase-section-head h2,
+.anime-list-section .showcase-section-head h2 {
+  margin: 0;
+  font-size: clamp(24px, 4vw, 38px);
+  line-height: 1.05;
+  letter-spacing: 0;
+}
+
+.anime-section-head {
+  gap: 14px;
+}
+
+.showcase-card .optimized-picture,
+.anime-mini-card .optimized-picture,
+.anime-day-item .optimized-picture {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.anime-hub .showcase-card {
+  border-radius: 18px;
+}
+
+.anime-pagination {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.anime-pagination strong {
+  color: var(--text2);
+  font-size: 14px;
+}
+
+.anime-pagination a:last-child {
+  justify-self: end;
+}
+
+.anime-hub-layout {
+  display: grid;
+  grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.anime-rail {
+  display: grid;
+  gap: 10px;
+}
+
+.anime-rail-section.compact .anime-rail {
+  grid-template-columns: 1fr;
+}
+
+.anime-mini-card {
+  border-radius: 14px;
+  text-decoration: none;
+}
+
+.anime-mini-card .optimized-picture,
+.anime-mini-card img {
+  width: 54px;
+  height: 68px;
+}
+
+.anime-mini-card small {
+  display: block;
+  margin-top: 5px;
+}
+
+.anime-schedule-section .anime-schedule-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.anime-day-item {
+  text-decoration: none;
+}
+
+.anime-day-item .optimized-picture,
+.anime-day-item img {
+  width: 42px;
+  height: 52px;
+}
+
+.anime-list-prompt {
+  min-height: 120px;
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  border: 1px dashed #ffffff24;
+  border-radius: 18px;
+  padding: 22px;
+  color: var(--text2);
+  text-align: center;
+}
+
+.anime-list-prompt p {
+  max-width: 420px;
+  margin: 0;
+}
+
+.anime-selectbar {
+  display: grid;
+  grid-template-columns: auto minmax(160px, 260px) auto;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 10px;
+  border: 1px solid rgba(45, 212, 191, 0.18);
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04)),
+    radial-gradient(circle at top left, rgba(20, 184, 166, 0.14), transparent 42%);
+  box-shadow: 0 18px 42px rgba(2, 6, 23, 0.18);
+}
+
+.anime-selectbar label {
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.anime-selectbar select {
+  min-width: 0;
+  min-height: 40px;
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 12px;
+  padding: 0 12px;
+  background: #0f1118;
+  color: var(--text);
+  font: inherit;
+  outline: 0;
+}
+
+.anime-selectbar button {
+  min-height: 40px;
+  border: 0;
+  border-radius: 12px;
+  padding: 0 14px;
+  background: #14b8a6;
+  color: #042f2e;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.anime-schedule-menu {
+  grid-template-columns: auto minmax(170px, 1fr) auto;
+  margin-top: -4px;
+}

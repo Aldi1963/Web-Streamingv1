@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { apiError } from "@/lib/http";
-import { authRateLimit } from "@/lib/rate-limit";
+import { authRateLimit, rateLimit } from "@/lib/rate-limit";
 import { hashResetToken } from "@/lib/password-reset";
 
 const input = z.object({
@@ -16,6 +16,13 @@ export async function POST(request: Request) {
   if (limited) return limited;
   try {
     const data = input.parse(await request.json());
+    const tokenLimit = rateLimit({
+      windowMs: 15 * 60_000,
+      max: 5,
+      keyFn: () => `reset:${data.token}`,
+    });
+    const tokenLimitCheck = await tokenLimit(request);
+    if (tokenLimitCheck) return tokenLimitCheck;
     const user = await db.user.findFirst({
       where: {
         rememberToken: hashResetToken(data.token),

@@ -28,4 +28,4 @@ MYSQL_PWD="$password" mysqldump -h "$host" -P "$port" -u "$user" \
 tar --exclude=node_modules --exclude='.next*' --exclude='.git' \
   -czf "$DEST/clipku-source-$STAMP.tar.gz" .
 
-find "$DEST" -type f -name 'clipku-*' -mtime +14 -delete
+find "$DEST" -type f -name 'clipku-*' -mtime +7 -delete

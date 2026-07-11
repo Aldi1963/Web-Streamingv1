@@ -4,7 +4,7 @@ import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { UserPlus } from "lucide-react";
 
-export function RegisterForm() {
+export function RegisterForm({ redirectTo = "/dashboard" }: { redirectTo?: string }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -18,7 +18,7 @@ export function RegisterForm() {
       headers: { "content-type": "application/json" },
       body: JSON.stringify(data),
     });
-    if (r.ok) location.href = "/login";
+    if (r.ok) location.href = `/login?redirect=${encodeURIComponent(redirectTo)}`;
     else setError((await r.json()).message);
     setLoading(false);
   }
@@ -46,7 +46,7 @@ export function RegisterForm() {
             <button type="submit" className="btn" disabled={loading}>
               <UserPlus size={18} /> {loading ? "Memproses..." : "Daftar"}
             </button>
-            <Link href="/login" className="form-link">Sudah punya akun? Masuk</Link>
+            <Link href={`/login?redirect=${encodeURIComponent(redirectTo)}`} className="form-link">Sudah punya akun? Masuk</Link>
           </div>
         </form>
       </div>

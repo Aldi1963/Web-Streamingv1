@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/services/auth-service";
 import { apiError } from "@/lib/http";
-import { authRateLimit } from "@/lib/rate-limit";
+import { authRateLimit, rateLimit } from "@/lib/rate-limit";
 
 const schema = z.object({
   name: z.string().min(2).max(80),
@@ -17,6 +17,13 @@ export async function POST(request: Request) {
 
   try {
     const input = schema.parse(await request.json());
+    const emailLimit = rateLimit({
+      windowMs: 60 * 60_000,
+      max: 3,
+      keyFn: () => `register:${input.email.toLowerCase()}`,
+    });
+    const emailLimitCheck = await emailLimit(request);
+    if (emailLimitCheck) return emailLimitCheck;
     await auth.register(input.name, input.email, input.password);
     return NextResponse.json(
       { message: "Akun berhasil dibuat." },

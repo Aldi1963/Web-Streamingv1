@@ -10,10 +10,9 @@ export async function GET() {
     const user = await auth.currentUser();
     if (!user)
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    const userId = user.id;
 
     const items = await db.watchlist.findMany({
-      where: { userId },
+      where: { userId: user.id },
       include: {
         content: {
           select: {
@@ -43,15 +42,14 @@ export async function POST(request: Request) {
     const user = await auth.currentUser();
     if (!user)
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    const userId = user.id;
 
     const { contentId } = z
       .object({ contentId: z.string() })
       .parse(await request.json());
 
     await db.watchlist.upsert({
-      where: { userId_contentId: { userId, contentId } },
-      create: { userId, contentId },
+      where: { userId_contentId: { userId: user.id, contentId } },
+      create: { userId: user.id, contentId },
       update: {},
     });
 
@@ -67,14 +65,13 @@ export async function DELETE(request: Request) {
     const user = await auth.currentUser();
     if (!user)
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    const userId = user.id;
 
     const { contentId } = z
       .object({ contentId: z.string() })
       .parse(await request.json());
 
     await db.watchlist.deleteMany({
-      where: { userId, contentId },
+      where: { userId: user.id, contentId },
     });
 
     return NextResponse.json({ message: "Dihapus dari watchlist." });

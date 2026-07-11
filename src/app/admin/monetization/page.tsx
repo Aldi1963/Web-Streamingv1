@@ -1,20 +1,24 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowRight, BadgeDollarSign, CreditCard, Layers3, ShieldCheck } from "lucide-react";
+import { BadgeDollarSign, CreditCard, Gift, Layers3, ReceiptText, ShieldCheck, Store } from "lucide-react";
 import { auth } from "@/services/auth-service";
 import { db } from "@/lib/db";
 import { AdminLayout } from "@/components/admin-layout";
 import { AdminConsole } from "@/components/admin-console";
 import { AdminPlans } from "@/components/admin-plans";
+import { AdminResellers } from "@/components/admin-resellers";
+import { AdminVouchers } from "@/components/admin-vouchers";
 
 const tabs = [
-  { key: "plans", label: "Paket", hint: "Atur harga dan durasi" },
-  { key: "subscriptions", label: "Langganan", hint: "Pantau status aktif" },
-  { key: "payments", label: "Pembayaran", hint: "Cek transaksi terbaru" },
-  { key: "invoices", label: "Invoice", hint: "Audit tagihan dan status" },
+  { key: "plans", label: "Paket", Icon: Layers3 },
+  { key: "subscriptions", label: "Langganan", Icon: ShieldCheck },
+  { key: "payments", label: "Pembayaran", Icon: CreditCard },
+  { key: "invoices", label: "Invoice", Icon: ReceiptText },
+  { key: "vouchers", label: "Voucher", Icon: Gift },
+  { key: "resellers", label: "Reseller", Icon: Store },
 ] as const;
 
-const tabSections = new Set(["plans", "subscriptions", "payments", "invoices"]);
+const tabSections = new Set(["plans", "subscriptions", "payments", "invoices", "vouchers", "resellers"]);
 
 function metric(value: number | string, label: string, Icon: typeof BadgeDollarSign) {
   return (
@@ -52,23 +56,14 @@ export default async function MonetizationPage({
         title="Monetisasi"
       >
         <section className="monetization-page">
-          <div className="panel monetization-hero">
-            <div>
+          <div className="monetization-topbar">
+            <div className="monetization-title">
               <p className="eyebrow">Monetisasi</p>
-              <h2>Kontrol paket dan transaksi</h2>
-              <p>
-                Fokus ke paket aktif, langganan berjalan, dan pembayaran yang masih menunggu
-                verifikasi. Tab di bawah menukar konteks tanpa memindahkan alur kerja.
-              </p>
+              <h2>Paket, pembayaran, dan langganan</h2>
             </div>
-            <div className="monetization-hero-actions">
-              <Link className="btn btn-secondary" href="/admin/subscriptions">
-                <ShieldCheck size={16} /> Langganan
-              </Link>
-              <Link className="btn" href="/admin/payments">
-                <ArrowRight size={16} /> Transaksi
-              </Link>
-            </div>
+            <span className="monetization-current">
+              {tabs.find((item) => item.key === activeTab)?.label || "Paket"}
+            </span>
           </div>
 
           <div className="monetization-summary">
@@ -84,8 +79,8 @@ export default async function MonetizationPage({
               const active = activeTab === item.key;
               return (
                 <Link key={item.key} href={href} className={`monetization-tab${active ? " active" : ""}`}>
+                  <item.Icon size={16} />
                   <span>{item.label}</span>
-                  <small>{item.hint}</small>
                 </Link>
               );
             })}
@@ -94,6 +89,10 @@ export default async function MonetizationPage({
           <div className="monetization-content">
             {activeTab === "plans" ? (
               <AdminPlans />
+            ) : activeTab === "vouchers" ? (
+              <AdminVouchers />
+            ) : activeTab === "resellers" ? (
+              <AdminResellers />
             ) : (
               <AdminConsole section={activeTab} />
             )}

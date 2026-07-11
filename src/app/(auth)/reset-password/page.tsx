@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, Suspense, useState } from "react";
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
   const token = useSearchParams().get("token") || "";
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
@@ -42,5 +42,13 @@ export default function ResetPasswordPage() {
         )}
       </div>
     </main>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={null}>
+      <ResetPasswordForm />
+    </Suspense>
   );
 }

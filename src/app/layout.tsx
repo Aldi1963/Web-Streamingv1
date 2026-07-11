@@ -1,7 +1,9 @@
 import "./globals.css";
 import "./fullscreen.css";
 import "./player-overrides.css";
+import { Suspense } from "react";
 import { AppShell } from "@/components/app-shell";
+import { NavigationMemory } from "@/components/navigation-memory";
 import { PwaRegistration } from "@/components/pwa-registration";
 import { auth } from "@/services/auth-service";
 
@@ -24,7 +26,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body>
         <PwaRegistration />
-        <AppShell userName={user?.name} role={user?.role}>{children}</AppShell>
+        <Suspense fallback={null}>
+          <NavigationMemory />
+        </Suspense>
+        <Suspense fallback={children}>
+          <AppShell userName={user?.name} role={user?.role}>{children}</AppShell>
+        </Suspense>
       </body>
     </html>
   );

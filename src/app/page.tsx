@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { Play, Star, Tv, ArrowRight, Layers3 } from "lucide-react";
-import { auth } from "@/services/auth-service";
 import { ProviderHeroSlider } from "@/components/provider-hero-slider";
+import { CatalogProviderLink } from "@/components/catalog-provider-link";
 import { ContentCardMetrics } from "@/components/content-card-metrics";
 import { InfiniteContentGrid } from "@/components/infinite-content-grid";
 import { OptimizedImage } from "@/components/optimized-image";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 type HomeProps = {
   searchParams: Promise<{ provider?: string }>;
@@ -43,9 +43,8 @@ const cardSelect = {
 } as const;
 
 export default async function Home({ searchParams }: HomeProps) {
-  const [params, user, providers] = await Promise.all([
+  const [params, providers] = await Promise.all([
     searchParams,
-    auth.currentUser(),
     db.content.groupBy({
       by: ["providerName", "providerSlug"],
       where: { isActive: true },
@@ -60,28 +59,23 @@ export default async function Home({ searchParams }: HomeProps) {
     ...(activeProvider ? { providerSlug: activeProvider.providerSlug } : {}),
   };
 
-  const [featured, latest, saved] = await Promise.all([
+  const [featured, recommended] = await Promise.all([
     db.content.findMany({
       where: { ...contentWhere, posterUrl: { not: null } },
       select: {
         id: true, slug: true, title: true, description: true, posterUrl: true,
         bannerUrl: true, providerName: true, rating: true, type: true, releaseYear: true,
       },
-      take: 6,
+      take: 4,
       orderBy: [{ rating: "desc" }, { lastSyncedAt: "desc" }],
     }).catch(() => []),
     db.content.findMany({
       where: contentWhere,
       select: cardSelect,
-      take: 18,
-      orderBy: { lastSyncedAt: "desc" },
+      take: 12,
+      orderBy: [{ providerViewCount: "desc" }, { trendingScore: "desc" }, { rating: "desc" }, { lastSyncedAt: "desc" }],
     }).catch(() => []),
-    user ? db.watchlist.findMany({
-      where: { userId: user.id },
-      select: { contentId: true },
-    }).catch(() => []) : Promise.resolve([]),
   ]);
-  const savedIds = new Set(saved.map(item => item.contentId));
 
   return (
     <>
@@ -96,22 +90,20 @@ export default async function Home({ searchParams }: HomeProps) {
           </span>
         </div>
         <div className="home-provider-list">
-          <Link
+          <CatalogProviderLink
             href="/"
             className={`home-provider-card${activeProvider ? "" : " active"}`}
             aria-current={activeProvider ? undefined : "page"}
-            prefetch={false}
           >
             <span className="home-provider-logo provider-logo-all"><Layers3 size={24} /></span>
             <span className="home-provider-copy"><strong>Semua</strong><small>Provider</small></span>
-          </Link>
+          </CatalogProviderLink>
           {providers.map((provider, index) => (
-            <Link
+            <CatalogProviderLink
               href={`/?provider=${provider.providerSlug}`}
               className={`home-provider-card provider-tone-${index % 8}${activeProvider?.providerSlug === provider.providerSlug ? " active" : ""}`}
               key={provider.providerSlug}
               aria-current={activeProvider?.providerSlug === provider.providerSlug ? "page" : undefined}
-              prefetch={false}
             >
               <span className="home-provider-logo" aria-hidden="true">
                 {providerLogos[provider.providerSlug] ? (
@@ -129,7 +121,7 @@ export default async function Home({ searchParams }: HomeProps) {
                 <strong>{provider.providerName.replace(" Short Drama", "").replace(" Short", "")}</strong>
                 <small>{provider._count} drama</small>
               </span>
-            </Link>
+            </CatalogProviderLink>
           ))}
         </div>
       </section>
@@ -139,25 +131,26 @@ export default async function Home({ searchParams }: HomeProps) {
         <ProviderHeroSlider
           items={featured}
           providerName={activeProvider?.providerName}
-          loggedIn={Boolean(user)}
-          savedIds={Array.from(savedIds)}
+          loggedIn={false}
+          savedIds={[]}
         />
       )}
 
       {/* Content Grid */}
       <section className="section">
-        <div className="section-header"><h2><Tv size={22} style={{marginRight:8,verticalAlign:"middle"}} />Terbaru{activeProvider && <span className="section-provider-name"> · {activeProvider.providerName.replace(" Short Drama", "")}</span>}</h2><Link className="section-link" href={activeProvider ? `/browse?provider=${activeProvider.providerSlug}` : "/browse"} prefetch={false}>Lihat semua <ArrowRight size={16} /></Link></div>
+        <div className="section-header"><h2><Tv size={22} style={{marginRight:8,verticalAlign:"middle"}} />Rekomendasi{activeProvider && <span className="section-provider-name"> · {activeProvider.providerName.replace(" Short Drama", "")}</span>}</h2><Link className="section-link" href={activeProvider ? `/popular?provider=${activeProvider.providerSlug}` : "/popular"} prefetch={false}>Lihat semua <ArrowRight size={16} /></Link></div>
         {activeProvider ? (
           <InfiniteContentGrid
             provider={activeProvider.providerSlug}
-            initialItems={latest}
-            initialCursor={latest.length < activeProvider._count ? latest.at(-1)?.id ?? null : null}
+            sort="recommended"
+            initialItems={recommended}
+            initialCursor={recommended.length < activeProvider._count ? recommended.at(-1)?.id ?? null : null}
           />
         ) : <div className="grid">
-          {latest.map((item, index) => (
+          {recommended.map((item, index) => (
             <Link href={`/drama/${item.slug}`} className="card" key={item.id} prefetch={false}>
               <div className="card-poster">
-                {item.posterUrl ? <OptimizedImage src={item.posterUrl} alt={item.title} priority={index < 3} /> : <div className="placeholder"><span><Play size={30} /></span></div>}
+                {item.posterUrl ? <OptimizedImage src={item.posterUrl} alt={item.title} /> : <div className="placeholder"><span><Play size={30} /></span></div>}
                 {item.rating && <span className="card-badge-rating"><Star size={10} fill="currentColor" /> {item.rating}</span>}
               </div>
               <div className="card-body">

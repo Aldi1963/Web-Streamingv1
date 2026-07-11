@@ -1,0 +1,384 @@
+.anime-movieslike-page {
+  display: grid;
+  gap: 18px;
+  padding-top: 24px;
+  padding-bottom: 64px;
+}
+
+.anime-movieslike-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.anime-icon-btn {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #ffffff16;
+  border-radius: 999px;
+  background: #ffffff07;
+  color: var(--text2);
+  transition: all var(--transition);
+}
+
+.anime-icon-btn:hover {
+  background: #ffffff10;
+  border-color: #ffffff2c;
+  color: #fff;
+}
+
+.anime-title-block {
+  display: grid;
+  gap: 2px;
+  text-align: center;
+}
+
+.anime-title-block h1 {
+  margin: 0;
+  font-size: 1rem;
+  letter-spacing: .01em;
+}
+
+.anime-kicker,
+.anime-eyebrow {
+  color: var(--brand-text);
+  font-size: .7rem;
+  font-weight: 850;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.anime-movieslike-nav {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+
+.anime-movieslike-nav::-webkit-scrollbar,
+.anime-movieslike-chiprow::-webkit-scrollbar {
+  display: none;
+}
+
+.anime-movieslike-chip {
+  flex: 0 0 auto;
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 14px;
+  border: 1px solid #ffffff16;
+  border-radius: 999px;
+  background: #ffffff08;
+  color: var(--text2);
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.anime-movieslike-chip.active {
+  color: #fff;
+  background: #ffffff12;
+  border-color: #ffffff2c;
+}
+
+.anime-movieslike-hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 22px;
+  padding: 24px 0 10px;
+  border-bottom: 1px solid #ffffff10;
+}
+
+.anime-movieslike-copy {
+  max-width: 760px;
+}
+
+.anime-movieslike-copy h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 10px;
+  font-size: clamp(2rem, 5vw, 3.45rem);
+  line-height: 1;
+  letter-spacing: -.7px;
+}
+
+.anime-movieslike-copy p:not(.anime-eyebrow) {
+  margin: 0;
+  color: var(--text2);
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+.anime-movieslike-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(86px, 1fr));
+  gap: 10px;
+  min-width: 320px;
+}
+
+.anime-movieslike-stats span {
+  display: grid;
+  gap: 5px;
+  padding: 14px 15px;
+  border: 1px solid #ffffff14;
+  border-radius: 14px;
+  background: #ffffff07;
+  color: var(--muted);
+  font-size: .72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+}
+
+.anime-movieslike-stats strong {
+  color: #fff;
+  font-size: 1.45rem;
+  line-height: 1;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.anime-movieslike-toolbar {
+  display: grid;
+  gap: 12px;
+}
+
+.anime-movieslike-chiprow {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.anime-movieslike-section {
+  display: grid;
+  gap: 14px;
+}
+
+.anime-movieslike-section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.anime-movieslike-section-head h2 {
+  margin: 0;
+  font-size: 1.35rem;
+  letter-spacing: -.25px;
+}
+
+.anime-movieslike-count {
+  flex: 0 0 auto;
+  padding: 7px 10px;
+  border: 1px solid #ffffff14;
+  border-radius: 999px;
+  background: #ffffff07;
+  color: var(--muted);
+  font-size: .76rem;
+  font-weight: 700;
+}
+
+.anime-movieslike-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 16px;
+}
+
+.anime-movieslike-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #ffffff12;
+  border-radius: 12px;
+  background: #101520;
+  transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease;
+  animation: fadeInUp .5s var(--transition) forwards;
+  opacity: 0;
+}
+
+.anime-movieslike-card:hover {
+  transform: translateY(-4px);
+  border-color: #ffffff2e;
+  box-shadow: 0 16px 36px #00000073;
+}
+
+.anime-movieslike-poster {
+  position: relative;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  background: #0d111b;
+}
+
+.anime-movieslike-poster .optimized-picture,
+.anime-movieslike-poster img {
+  width: 100%;
+  height: 100%;
+}
+
+.anime-movieslike-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 62%, #00000060 100%);
+  pointer-events: none;
+}
+
+.anime-movieslike-badge {
+  position: absolute;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 7px;
+  border: 1px solid #ffffff20;
+  border-radius: 6px;
+  background: #000c;
+  backdrop-filter: blur(8px);
+  font-size: .72rem;
+  font-weight: 750;
+}
+
+.anime-movieslike-type {
+  left: 8px;
+  top: 8px;
+  color: #fff;
+}
+
+.anime-movieslike-rating {
+  top: 8px;
+  right: 8px;
+  color: var(--gold);
+}
+
+.anime-movieslike-copy {
+  padding: 11px;
+}
+
+.anime-movieslike-copy h3 {
+  margin: 0;
+  font-size: .86rem;
+  line-height: 1.28;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.anime-movieslike-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding-top: 6px;
+}
+
+.anime-movieslike-pagination strong {
+  color: var(--muted);
+  font-size: .86rem;
+  font-weight: 700;
+}
+
+@media (max-width: 980px) {
+  .anime-hub-hero,
+  .anime-hub-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .anime-catalog-hero,
+  .anime-catalog-layout,
+  .anime-catalog-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .anime-catalog-sidebar {
+    position: static;
+  }
+
+  .anime-movieslike-hero {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .anime-movieslike-stats {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .anime-metric-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .anime-schedule-section .anime-schedule-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .anime-metric-row {
+    grid-template-columns: 1fr;
+  }
+
+  .anime-movieslike-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .anime-movieslike-card {
+    border-radius: 10px;
+  }
+
+  .anime-movieslike-copy {
+    padding: 9px;
+  }
+
+  .anime-movieslike-copy h3 {
+    font-size: .72rem;
+    line-height: 1.25;
+  }
+
+  .anime-letter-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .anime-catalog-card {
+    grid-template-columns: 88px minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .anime-searchbar {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .anime-searchbar button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .anime-pagination {
+    grid-template-columns: 1fr;
+    justify-items: stretch;
+  }
+
+  .anime-pagination a,
+  .anime-pagination a:last-child {
+    justify-self: stretch;
+  }
+
+  .anime-selectbar {
+    grid-template-columns: 1fr;
+  }
+
+  .anime-selectbar button {
+    width: 100%;
+  }
+
+  .anime-selectbar,
+  .anime-schedule-menu {
+    grid-template-columns: 1fr;
+  }
+}

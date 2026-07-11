@@ -1,6 +1,7 @@
 import { createHash } from "crypto";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
+import { isProviderSupported, providerSupportReason } from "@/lib/provider-policy";
 
 const BASE = env.CLIPKU_API_BASE_URL;
 const TIMEOUT = env.CLIPKU_API_TIMEOUT * 1000;
@@ -30,13 +31,26 @@ function readPath(value: unknown, path: string): unknown {
   }, value);
 }
 
+function firstStringValue(data: unknown, paths: string[]) {
+  for (const path of paths) {
+    const value = readPath(data, path);
+    if (typeof value === "string" && value.trim()) return value.trim();
+    if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  }
+  return null;
+}
+
 export class ClipkuApiService {
   async request(path: string, params: Record<string, string | number | undefined> = {}, endpointId?: string) {
     const url = new URL(allowedUrl(path));
     Object.entries(params).forEach(([key, value]) => value !== undefined && url.searchParams.set(key, String(value)));
+    const bypassCache = /\/(?:stream|streamv2)$/i.test(path);
+    const requestCacheTtl = /\/download-(?:movie|series)$/i.test(path)
+      ? Math.min(CACHE_TTL, 10 * 60 * 1000)
+      : CACHE_TTL;
     const cacheKey = createHash("sha256").update(url.toString()).digest("hex");
     let cached = null;
-    if (CACHE_ENABLED) {
+    if (CACHE_ENABLED && !bypassCache) {
       cached = await db.apiCache.findUnique({ where: { key: cacheKey } });
       if (cached && cached.expiresAt > new Date()) return cached.value;
     }
@@ -52,17 +66,20 @@ export class ClipkuApiService {
         cache: "no-store"
       });
       status = response.status;
-      if (!response.ok) throw new Error(`Clipku HTTP ${response.status}`);
-      const data = await response.json();
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        const upstreamMessage = firstStringValue(data, ["error_msg", "error", "message"]);
+        throw new Error(upstreamMessage ?? `Clipku HTTP ${response.status}`);
+      }
       const ops: Promise<unknown>[] = [
         this.saveApiLog(endpointId, path.split("/")[1] ?? "system", url.toString(), params, status, data, Date.now() - started)
       ];
-      if (CACHE_ENABLED) {
+      if (CACHE_ENABLED && !bypassCache) {
         ops.push(
           db.apiCache.upsert({
             where: { key: cacheKey },
-            create: { key: cacheKey, value: data, expiresAt: new Date(Date.now() + CACHE_TTL) },
-            update: { value: data, expiresAt: new Date(Date.now() + CACHE_TTL) }
+            create: { key: cacheKey, value: data, expiresAt: new Date(Date.now() + requestCacheTtl) },
+            update: { value: data, expiresAt: new Date(Date.now() + requestCacheTtl) }
           })
         );
       }
@@ -71,6 +88,10 @@ export class ClipkuApiService {
     } catch (error) {
       await this.saveApiLog(endpointId, path.split("/")[1] ?? "system", url.toString(), params, status, null, Date.now() - started, String(error));
       if (cached) return cached.value;
+      const message = error instanceof Error ? error.message : String(error);
+      if (!/^Clipku HTTP\b/.test(message) && !/fetch failed|aborted|timeout|network/i.test(message)) {
+        throw new Error(message);
+      }
       throw new Error("API Clipku sedang bermasalah, silakan coba lagi nanti.");
     }
   }
@@ -111,6 +132,7 @@ export class ClipkuApiService {
   async scanEndpoints() {
     const endpoints = this.parseEndpoints(await this.fetchDocumentation());
     for (const endpoint of endpoints) {
+      const isSupported = isProviderSupported(endpoint.providerSlug);
       await db.apiEndpoint.upsert({
         where: { providerSlug_path: { providerSlug: endpoint.providerSlug, path: endpoint.path } },
         create: {
@@ -122,15 +144,19 @@ export class ClipkuApiService {
           endpointName: endpoint.endpointName,
           description: endpoint.description,
           fullUrl: allowedUrl(endpoint.path),
-          queryParamsJson: endpoint.queryParams
+          queryParamsJson: endpoint.queryParams,
+          isActive: isSupported,
         },
         update: {
           providerName: endpoint.providerName,
           providerType: endpoint.providerType,
           endpointName: endpoint.endpointName,
-          description: endpoint.description,
+          description: isSupported
+            ? endpoint.description
+            : `${endpoint.description} [disabled: ${providerSupportReason(endpoint.providerSlug)}]`,
           queryParamsJson: endpoint.queryParams,
-          fullUrl: allowedUrl(endpoint.path)
+          fullUrl: allowedUrl(endpoint.path),
+          isActive: isSupported,
         }
       });
     }
@@ -144,17 +170,20 @@ export class ClipkuApiService {
   async getLatest(provider: string, page = 1) { return this.request(`/${provider}/new`, { page }); }
   async getPopular(provider: string, page = 1) { return this.request(`/${provider}/populer`, { page }); }
   async search(provider: string, keyword: string) { return this.request(`/${provider}/search`, { q: keyword }); }
-  async getDetail(provider: string, id: string) {
-    const params = provider === "dramabox" ? { bookId: id } : { id };
-    return this.request(`/${provider}/detail`, params);
-  }
-  async getStream(provider: string, id: string, ep = 1) {
+  async getDetail(provider: string, id: string) { return this.request(`/${provider}/detail`, { id }); }
+  async getStream(provider: string, id: string, ep = 1, metadata?: unknown) {
     if (provider === "moviebox") {
-      const detail = await this.getDetail(provider, id);
-      const detailData = detail && typeof detail === "object"
-        ? ((detail as Record<string, unknown>).data as Record<string, unknown> | undefined)
+      const storedData = metadata && typeof metadata === "object"
+        ? metadata as Record<string, unknown>
         : undefined;
-      const subjectType = Number(detailData?.subjectType ?? 0);
+      let subjectType = Number(storedData?.subjectType ?? 0);
+      if (!subjectType) {
+        const detail = await this.getDetail(provider, id);
+        const detailData = detail && typeof detail === "object"
+          ? ((detail as Record<string, unknown>).data as Record<string, unknown> | undefined)
+          : undefined;
+        subjectType = Number(detailData?.subjectType ?? 0);
+      }
       const path = subjectType === 1 ? "/moviebox/download-movie" : "/moviebox/download-series";
       const params: Record<string, string | number> = { subjectId: id, resolution: 720 };
       if (path.endsWith("series")) params.se = ep;
@@ -196,12 +225,55 @@ export class ClipkuApiService {
       if (typeof chapterId !== "string") throw new Error(`Episode ${ep} tidak ditemukan.`);
       return this.request(`/${provider}/stream`, { drama_id: id, chapter_id: chapterId });
     }
+    if (provider === "drama") {
+      const detail = await this.getDetail(provider, id);
+      const episodesPayload = detail && typeof detail === "object"
+        ? (detail as Record<string, unknown>).episodes
+        : undefined;
+      const episodeList = episodesPayload && typeof episodesPayload === "object"
+        ? (episodesPayload as Record<string, unknown>).data
+        : undefined;
+      const selected = Array.isArray(episodeList)
+        ? episodeList.find(item => {
+            if (!item || typeof item !== "object") return false;
+            const row = item as Record<string, unknown>;
+            return Number(row.episode_number ?? row.episode ?? row.number) === ep;
+          }) ?? episodeList[ep - 1]
+        : undefined;
+      const streamingId = selected && typeof selected === "object"
+        ? (selected as Record<string, unknown>).streaming
+        : undefined;
+      if (typeof streamingId !== "string" && typeof streamingId !== "number") {
+        throw new Error(`Streaming episode ${ep} tidak ditemukan.`);
+      }
+      return this.request(`/${provider}/stream`, { streaming: streamingId });
+    }
     const params = paramMap[provider] ?? { id, ep };
     return this.request(`/${provider}/stream`, params);
   }
   async getStreamV2(provider: string, id: string, ep = 1) {
     const params = provider === "reelshort" ? { id, episode_no: ep } : { id, ep };
     return this.request(`/${provider}/streamv2`, params);
+  }
+  async getShortmaxStreamV2(id: string, ep = 1, metadata?: unknown) {
+    let bookId = firstStringValue(metadata, [
+      "data.info.shortPlayCode",
+      "info.shortPlayCode",
+      "data.shortPlayCode",
+      "shortPlayCode",
+      "apiRawResponse.data.info.shortPlayCode",
+    ]);
+    if (!bookId) {
+      const detail = await this.getDetail("shortmax", id);
+      bookId = firstStringValue(detail, [
+        "data.info.shortPlayCode",
+        "info.shortPlayCode",
+        "data.shortPlayCode",
+        "shortPlayCode",
+      ]);
+    }
+    if (!bookId) throw new Error("ID stream ShortMax tidak ditemukan.");
+    return this.request("/shortmax/streamv2", { id: bookId, ep });
   }
   async getLanguages(provider: string) { return this.request(`/${provider}/languages`); }
   async getCategories(provider: string) { return this.request(`/${provider}/categories`); }

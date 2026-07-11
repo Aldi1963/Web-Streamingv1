@@ -1,5 +1,6 @@
 "use client";
-import { Activity, ChevronLeft, ChevronRight, CircleDollarSign, Database, Film, RefreshCw, Search, Users } from "lucide-react";
+import { Activity, AlertTriangle, ChevronLeft, ChevronRight, CircleDollarSign, Film, RefreshCw, Search, ServerCog, ShieldCheck, Users } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 type Action = { type: string; id: string; value: boolean | string; label: string; detail?: boolean };
@@ -45,7 +46,14 @@ export function AdminConsole({ section }: { section: string }) {
     {[1,2,3,4].map(item => <div className="panel admin-stat-skeleton" key={item}><span/><strong/></div>)}
     <div className="panel admin-table-skeleton"><span/><span/><span/><span/></div>
   </div>;
-  const stats = data.stats;
+  const stats = data.stats || {
+    users: 0,
+    contents: 0,
+    activeSubscriptions: 0,
+    payments: 0,
+    endpoints: 0,
+    failedSyncs: 0,
+  };
   const overviewMetrics = [
     ["Pengguna", stats.users],
     ["Langganan aktif", stats.activeSubscriptions],
@@ -62,22 +70,26 @@ export function AdminConsole({ section }: { section: string }) {
   }, { success: 0, failed: 0 });
   const syncAll = syncTotals.success + syncTotals.failed;
   const syncSuccessRate = syncAll ? Math.round(syncTotals.success / syncAll * 100) : 0;
+  const dashboardCards: Array<{ label: string; value: number; caption: string; Icon: LucideIcon; tone: string }> = [
+    { label: "Pengguna", value: stats.users, caption: "Akun terdaftar", Icon: Users, tone: "neutral" },
+    { label: "Konten", value: stats.contents, caption: "Judul tersimpan", Icon: Film, tone: "accent" },
+    { label: "Langganan aktif", value: stats.activeSubscriptions, caption: "Akses premium berjalan", Icon: ShieldCheck, tone: "success" },
+    { label: "Transaksi", value: stats.payments, caption: "Riwayat pembayaran", Icon: CircleDollarSign, tone: "warning" },
+    { label: "Endpoint API", value: stats.endpoints, caption: "Sumber provider aktif", Icon: ServerCog, tone: "info" },
+    { label: "Sync bermasalah", value: stats.failedSyncs, caption: stats.failedSyncs ? "Perlu dicek" : "Semua aman", Icon: stats.failedSyncs ? AlertTriangle : RefreshCw, tone: stats.failedSyncs ? "danger" : "success" },
+  ];
   return <div className="admin-console">
     {section === "dashboard" && <div className="admin-stats">
-      {[
-        ["Pengguna",stats.users,Users,"neutral"],
-        ["Konten",stats.contents,Film,"neutral"],
-        ["Langganan aktif",stats.activeSubscriptions,Activity,"success"],
-        ["Transaksi",stats.payments,CircleDollarSign,"neutral"],
-        ["Endpoint API",stats.endpoints,Database,"neutral"],
-        ["Sync bermasalah",stats.failedSyncs,RefreshCw,stats.failedSyncs ? "danger" : "success"],
-      ].map(([label,value,Icon,tone]) => {
-        const MetricIcon = Icon as typeof Users;
-        return <div className={`panel admin-stat-card ${tone}`} key={String(label)}>
-          <span className="admin-stat-icon"><MetricIcon size={19}/></span>
-          <div><span>{String(label)}</span><strong>{Number(value).toLocaleString("id-ID")}</strong></div>
-        </div>;
-      })}
+      {dashboardCards.map(({ label, value, caption, Icon, tone }) => (
+        <div className={`panel admin-stat-card ${tone}`} key={label}>
+          <span className="admin-stat-icon"><Icon size={20}/></span>
+          <div>
+            <span>{label}</span>
+            <strong>{value.toLocaleString("id-ID")}</strong>
+            <small>{caption}</small>
+          </div>
+        </div>
+      ))}
     </div>}
     {section === "dashboard" && <div className="admin-charts">
       <section className="panel admin-chart-card">

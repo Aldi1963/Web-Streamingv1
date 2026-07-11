@@ -1,0 +1,881 @@
+/* Refined mobile player chrome */
+.watch-player-shell .player-top-actions {
+  top: max(12px, env(safe-area-inset-top));
+  right: 12px;
+  left: 12px;
+  gap: 8px;
+}
+
+.watch-player-shell .player-icon-btn,
+.watch-player-shell .player-pill-btn {
+  min-width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  border-color: rgba(255,255,255,0.16);
+  background: rgba(5,6,10,0.62);
+  box-shadow: 0 8px 22px rgba(0,0,0,0.26);
+  backdrop-filter: blur(14px);
+}
+
+.watch-player-shell .player-big-toggle {
+  width: 58px;
+  height: 58px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(8,9,13,0.58);
+  color: #fff;
+  box-shadow: 0 10px 28px rgba(0,0,0,0.28);
+  backdrop-filter: blur(14px);
+}
+
+.watch-player-shell .player-big-toggle svg {
+  width: 28px;
+  height: 28px;
+}
+
+.watch-player-shell .player-quick-actions {
+  gap: 2px;
+  padding: 5px;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 999px;
+  background: rgba(8,9,13,0.42);
+  box-shadow: 0 10px 28px rgba(0,0,0,0.22);
+  backdrop-filter: blur(14px);
+  transform: translate(-50%, calc(-50% + 58px));
+}
+
+.watch-player-shell .player-quick-actions.visible {
+  transform: translate(-50%, calc(-50% + 50px));
+}
+
+.watch-player-shell .player-round-btn {
+  width: 38px;
+  height: 38px;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.watch-player-shell .player-round-btn:active {
+  background: rgba(255,255,255,0.1);
+  transform: scale(0.96);
+}
+
+.watch-player-shell .player-round-btn span {
+  right: 6px;
+  bottom: 5px;
+  font-size: 0.5rem;
+}
+
+.watch-player-shell .episode-navigation {
+  display: none;
+}
+
+.watch-player-shell .player-bottom-controls {
+  gap: 9px;
+  padding: 14px 18px max(14px, env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, transparent, rgba(0,0,0,0.72) 40%, rgba(0,0,0,0.92));
+}
+
+.watch-player-shell .player-time-row {
+  font-size: 0.76rem;
+}
+
+.watch-player-shell .player-command-row {
+  gap: 7px;
+}
+
+.watch-player-shell .player-panel {
+  width: min(360px, calc(100% - 28px));
+  right: 14px;
+  left: auto;
+  bottom: 86px;
+  max-height: min(430px, 58vh);
+  padding: 14px;
+  border-radius: 18px;
+  border-color: rgba(255,255,255,0.14);
+  background: rgba(8,9,13,0.94);
+  box-shadow: 0 18px 58px rgba(0,0,0,0.62);
+}
+
+.watch-player-shell .player-panel-head {
+  margin-bottom: 10px;
+}
+
+.watch-player-shell .player-panel-head strong {
+  font-size: 0.94rem;
+}
+
+.watch-player-shell .player-setting-group {
+  gap: 6px;
+  padding: 9px 0;
+}
+
+.watch-player-shell .player-setting-group > span {
+  margin-bottom: 1px;
+  color: #aeb4c3;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+}
+
+.watch-player-shell .player-setting-group button {
+  min-height: 42px;
+  padding: 8px 12px;
+  border-radius: 11px;
+  background: rgba(255,255,255,0.055);
+  color: #eef1f7;
+  font-size: 0.86rem;
+}
+
+.watch-player-shell .player-setting-group button.active {
+  border-color: rgba(255,42,109,0.48);
+  background: rgba(255,42,109,0.16);
+  color: #ff9abb;
+}
+
+@media (max-width: 560px) {
+  .watch-player-shell .player-top-actions {
+    top: max(10px, env(safe-area-inset-top));
+    right: 10px;
+    left: 10px;
+  }
+
+  .watch-player-shell .player-icon-btn,
+  .watch-player-shell .player-pill-btn {
+    min-width: 38px;
+    height: 38px;
+    padding: 0 9px;
+    border-radius: 10px;
+  }
+
+  .watch-player-shell .player-big-toggle {
+    width: 56px;
+    height: 56px;
+  }
+
+  .watch-player-shell .player-big-toggle svg {
+    width: 27px;
+    height: 27px;
+  }
+
+  .watch-player-shell .player-round-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .watch-player-shell .player-quick-actions {
+    gap: 2px;
+    padding: 4px;
+    transform: translate(-50%, calc(-50% + 54px));
+  }
+
+  .watch-player-shell .player-quick-actions.visible {
+    transform: translate(-50%, calc(-50% + 47px));
+  }
+
+  .watch-player-shell .player-bottom-controls {
+    padding: 12px 14px max(12px, env(safe-area-inset-bottom));
+  }
+
+  .watch-player-shell .player-command-row {
+    gap: 6px;
+  }
+
+  .watch-player-shell .player-pill-btn {
+    font-size: 0.72rem;
+  }
+
+  .watch-player-shell .player-settings-panel {
+    left: 18px;
+    right: 18px;
+    bottom: 74px;
+    width: auto;
+    max-height: min(48vh, 360px);
+    padding: 12px;
+    border-radius: 16px;
+  }
+
+  .watch-player-shell .player-setting-group button {
+    min-height: 40px;
+    font-size: 0.84rem;
+  }
+}
+
+@media (orientation: portrait) and (max-width: 560px) {
+  .watch-player-shell .player-settings-panel {
+    top: auto;
+    bottom: 86px;
+    max-height: min(46vh, 340px);
+  }
+
+  .watch-player-shell .player-setting-group:nth-of-type(3) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .watch-player-shell .player-setting-group:nth-of-type(3) > span {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .watch-player-shell .player-episode-panel.portrait-bottom-sheet {
+    --sheet-base-height: calc(68dvh + env(safe-area-inset-bottom));
+    --sheet-drag-grow: 0px;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1201;
+    width: 100%;
+    height: min(88dvh, calc(var(--sheet-base-height) + var(--sheet-drag-grow)));
+    max-height: none;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 46px max(16px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    border-radius: 24px 24px 0 0;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-bottom: 0;
+    background: rgba(22,19,28,0.98);
+    box-shadow: 0 -18px 54px rgba(0,0,0,0.5);
+    backdrop-filter: blur(22px) saturate(135%);
+    animation: portraitSheetIn .28s cubic-bezier(.18,.86,.24,1) both;
+    transition: height .22s ease, transform .22s cubic-bezier(.2,.8,.2,1), border-radius .18s ease;
+    touch-action: pan-y;
+    will-change: height, transform;
+    overscroll-behavior: contain;
+  }
+
+  .watch-player-shell .player-episode-panel.portrait-bottom-sheet.expanded {
+    --sheet-base-height: 100dvh;
+    height: 100dvh;
+    border-radius: 0;
+  }
+
+  .watch-player-shell .player-episode-panel.portrait-bottom-sheet.is-dragging {
+    transition: height .12s ease;
+  }
+
+  .watch-player-shell .player-episode-panel.portrait-bottom-sheet.closing {
+    pointer-events: none;
+    transition: transform .22s cubic-bezier(.32,0,.67,0), opacity .18s ease;
+  }
+
+  .watch-player-shell .player-episode-panel .portrait-sheet-drag-zone {
+    height: 64px;
+    border-radius: 24px 24px 0 0;
+  }
+
+  .watch-player-shell .player-episode-panel::before {
+    content: "";
+    position: absolute;
+    top: 13px;
+    left: 50%;
+    width: min(86px, 28vw);
+    height: 5px;
+    border-radius: 999px;
+    transform: translateX(-50%);
+    background: rgba(255,255,255,0.78);
+  }
+
+  .watch-player-shell .player-episode-panel .player-panel-head {
+    justify-content: center;
+    flex: 0 0 auto;
+    margin: 0 -2px 14px;
+    padding-bottom: 12px;
+    text-align: center;
+    user-select: none;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+  }
+
+  .watch-player-shell .player-episode-panel .player-panel-head strong {
+    font-size: 1.05rem;
+    font-weight: 900;
+  }
+
+  .watch-player-shell .player-episode-panel .player-panel-head span {
+    display: none;
+  }
+
+  .watch-player-shell .player-episode-panel .player-episode-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 0 0 calc(12px + env(safe-area-inset-bottom));
+  }
+
+  .watch-player-shell .player-episode-panel .player-episode-grid button {
+    min-height: 62px;
+    border-radius: 10px;
+    font-size: 0.98rem;
+  }
+
+  .watch-player-shell .portrait-share-panel.portrait-bottom-sheet {
+    --sheet-base-height: calc(44dvh + env(safe-area-inset-bottom));
+    --sheet-drag-grow: 0px;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1201;
+    width: 100%;
+    min-height: 260px;
+    height: min(62dvh, calc(var(--sheet-base-height) + var(--sheet-drag-grow)));
+    max-height: none;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 46px max(20px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+    border-radius: 24px 24px 0 0;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-bottom: 0;
+    background: rgba(22,19,28,0.98);
+    box-shadow: 0 -18px 54px rgba(0,0,0,0.5);
+    backdrop-filter: blur(22px) saturate(135%);
+    animation: portraitSheetIn .28s cubic-bezier(.18,.86,.24,1) both;
+    transition: height .22s ease, transform .22s cubic-bezier(.2,.8,.2,1), border-radius .18s ease;
+    touch-action: pan-y;
+    will-change: height, transform;
+    overscroll-behavior: contain;
+  }
+
+  .watch-player-shell .portrait-share-panel.portrait-bottom-sheet.expanded {
+    --sheet-base-height: 100dvh;
+    height: 100dvh;
+    border-radius: 0;
+  }
+
+  .watch-player-shell .portrait-share-panel.portrait-bottom-sheet.is-dragging {
+    transition: height .12s ease;
+  }
+
+  .watch-player-shell .portrait-share-panel.portrait-bottom-sheet.closing {
+    pointer-events: none;
+    transition: transform .22s cubic-bezier(.32,0,.67,0), opacity .18s ease;
+  }
+
+  .watch-player-shell .portrait-share-panel::before {
+    content: "";
+    position: absolute;
+    top: 13px;
+    left: 50%;
+    width: min(86px, 28vw);
+    height: 5px;
+    border-radius: 999px;
+    transform: translateX(-50%);
+    background: rgba(255,255,255,0.78);
+  }
+
+  .watch-player-shell .portrait-share-panel .player-panel-head {
+    justify-content: center;
+    flex: 0 0 auto;
+    margin: 0 -2px 14px;
+    padding-bottom: 12px;
+    text-align: center;
+    user-select: none;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+  }
+
+  .watch-player-shell .portrait-share-panel .player-panel-head strong {
+    font-size: 1.05rem;
+    font-weight: 900;
+  }
+
+  .watch-player-shell .portrait-share-panel .portrait-share-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+    flex: 1 1 auto;
+    align-content: start;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 10px 0 calc(12px + env(safe-area-inset-bottom));
+  }
+}
+
+/* Portrait drama player */
+.watch-stage:has(.portrait-drama-player) {
+  min-height: 100svh;
+  background: #000;
+}
+
+.portrait-drama-player.watch-player-shell {
+  height: 100svh;
+  min-height: 620px;
+  aspect-ratio: auto;
+  box-shadow: none;
+  background: #000;
+  touch-action: pan-y;
+}
+
+.portrait-drama-player .watch-video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.portrait-drama-player::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(0,0,0,0.56), transparent 22%, transparent 62%, rgba(0,0,0,0.64)),
+    linear-gradient(90deg, transparent 58%, rgba(0,0,0,0.34));
+}
+
+.portrait-player-top {
+  position: absolute;
+  top: max(14px, env(safe-area-inset-top));
+  left: 18px;
+  right: 18px;
+  z-index: 18;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+}
+
+.portrait-player-back {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: rgba(255,255,255,0.86);
+}
+
+.portrait-player-top strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: rgba(255,255,255,0.86);
+  font-size: 1rem;
+  font-weight: 850;
+}
+
+.portrait-player-top span {
+  color: rgba(255,255,255,0.82);
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.portrait-drama-player .player-big-toggle {
+  display: none !important;
+}
+
+.portrait-drama-player .player-big-toggle svg {
+  width: 38px;
+  height: 38px;
+}
+
+.portrait-drama-player .player-top-actions,
+.portrait-drama-player .player-quick-actions,
+.portrait-drama-player .player-bottom-controls,
+.portrait-drama-player .episode-navigation {
+  display: none !important;
+}
+
+.portrait-player-top,
+.portrait-player-side {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .18s ease, transform .18s ease;
+}
+
+.portrait-drama-player.controls-visible .portrait-player-top,
+.portrait-drama-player.controls-visible .portrait-player-side {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.portrait-player-side {
+  position: absolute;
+  right: 16px;
+  top: 48%;
+  z-index: 18;
+  display: grid;
+  gap: 18px;
+  transform: translateY(-35%);
+}
+
+.portrait-drama-player.controls-visible .portrait-player-side {
+  transform: translateY(-35%);
+}
+
+.portrait-player-side button {
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+  border: 0;
+  background: transparent;
+  color: rgba(255,255,255,0.82);
+  font-weight: 750;
+}
+
+.portrait-player-side button svg {
+  width: 54px;
+  height: 54px;
+  padding: 15px;
+  border-radius: 50%;
+  background: rgba(18,18,18,0.82);
+  box-shadow: 0 10px 28px rgba(0,0,0,0.28);
+  backdrop-filter: blur(12px);
+}
+
+.portrait-player-side button span {
+  font-size: 0.78rem;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.75);
+}
+
+.portrait-switching {
+  position: absolute;
+  left: 50%;
+  top: 58%;
+  z-index: 22;
+  transform: translateX(-50%);
+  padding: 9px 13px;
+  border: 1px solid rgba(255,255,255,0.16);
+  border-radius: 999px;
+  background: rgba(0,0,0,0.72);
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 850;
+  backdrop-filter: blur(12px);
+}
+
+.portrait-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  border: 0;
+  background: rgba(0,0,0,0.28);
+  animation: portraitSheetFade .18s ease both;
+  touch-action: none;
+}
+
+.portrait-sheet-backdrop.closing {
+  opacity: 0;
+  transition: opacity .2s ease;
+}
+
+.portrait-drama-player .player-panel {
+  --sheet-base-height: calc(72dvh + env(safe-area-inset-bottom));
+  --sheet-drag-grow: 0px;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1201;
+  width: 100%;
+  height: min(100dvh, calc(var(--sheet-base-height) + var(--sheet-drag-grow)));
+  max-height: none;
+  display: flex;
+  flex-direction: column;
+  overflow-y: hidden;
+  overflow-x: hidden;
+  padding: 46px max(14px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
+  border-radius: 24px 24px 0 0;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-bottom: 0;
+  background: rgba(22,19,28,0.98);
+  box-shadow: 0 -18px 54px rgba(0,0,0,0.5);
+  backdrop-filter: blur(22px) saturate(135%);
+  animation: portraitSheetIn .28s cubic-bezier(.18,.86,.24,1) both;
+  transition: height .22s ease, transform .22s cubic-bezier(.2,.8,.2,1), border-radius .18s ease;
+  touch-action: pan-y;
+  will-change: height, transform;
+  scrollbar-width: thin;
+  overscroll-behavior: contain;
+}
+
+.portrait-drama-player .player-panel.expanded {
+  --sheet-base-height: 100dvh;
+  border-radius: 0;
+}
+
+.portrait-drama-player .portrait-share-panel {
+  --sheet-base-height: calc(50dvh + env(safe-area-inset-bottom));
+  min-height: 300px;
+}
+
+.portrait-drama-player .portrait-share-panel.expanded {
+  --sheet-base-height: 100dvh;
+}
+
+.portrait-drama-player .player-panel.is-dragging {
+  transition: height .12s ease;
+}
+
+.portrait-drama-player .player-panel.closing {
+  pointer-events: none;
+  transition: transform .22s cubic-bezier(.32,0,.67,0), opacity .18s ease;
+  opacity: 0.98;
+}
+
+.portrait-drama-player .player-panel::before {
+  content: "";
+  position: absolute;
+  top: 13px;
+  left: 50%;
+  width: min(86px, 28vw);
+  height: 5px;
+  border-radius: 999px;
+  transform: translateX(-50%);
+  background: rgba(255,255,255,0.78);
+}
+
+.portrait-sheet-drag-zone {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  z-index: 4;
+  border-radius: 24px 24px 0 0;
+  cursor: grab;
+  touch-action: none;
+}
+
+.portrait-sheet-drag-zone:active {
+  cursor: grabbing;
+}
+
+.portrait-drama-player .player-panel-head {
+  justify-content: center;
+  flex: 0 0 auto;
+  margin: 0 -2px 14px;
+  padding-bottom: 12px;
+  text-align: center;
+  user-select: none;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+
+.portrait-drama-player .player-panel-head strong {
+  font-size: 1.05rem;
+  font-weight: 900;
+}
+
+.portrait-drama-player .player-panel-head span {
+  display: none;
+}
+
+.portrait-drama-player .player-episode-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 0 calc(12px + env(safe-area-inset-bottom));
+}
+
+.portrait-drama-player .player-episode-grid button {
+  aspect-ratio: 1;
+  min-height: 44px;
+  border: 0;
+  border-radius: 11px;
+  background: rgba(255,255,255,0.11);
+  color: rgba(255,255,255,0.9);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  transition: transform .14s ease, background .14s ease, color .14s ease;
+}
+
+.portrait-drama-player .player-episode-grid button::before {
+  content: "EP.";
+}
+
+.portrait-drama-player .player-episode-grid button.active {
+  background: #d1005b;
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(209,0,91,0.28);
+}
+
+.portrait-drama-player .player-episode-grid button:active {
+  transform: scale(0.96);
+}
+
+.portrait-share-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 28px;
+  padding: 18px 4px 8px;
+}
+
+.portrait-share-grid a,
+.portrait-share-grid button {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  border: 0;
+  background: transparent;
+  color: rgba(255,255,255,0.82);
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.portrait-share-icon {
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.portrait-share-icon.whatsapp { background: #26b85a; }
+.portrait-share-icon.facebook { background: #315da8; font-size: 1.35rem; }
+.portrait-share-icon.twitter { background: #171717; }
+.portrait-share-icon.copy { background: #1d8fe8; }
+
+@keyframes portraitSheetIn {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes portraitSheetFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (max-width: 560px) {
+  .portrait-drama-player.watch-player-shell {
+    min-height: 100svh;
+  }
+
+  .portrait-player-top {
+    left: 14px;
+    right: 14px;
+    top: max(10px, env(safe-area-inset-top));
+  }
+
+  .portrait-player-side {
+    right: 12px;
+    gap: 15px;
+  }
+
+  .portrait-player-side button svg {
+    width: 50px;
+    height: 50px;
+    padding: 14px;
+  }
+
+  .portrait-drama-player .player-panel {
+    --sheet-base-height: calc(72dvh + env(safe-area-inset-bottom));
+    height: min(100dvh, calc(var(--sheet-base-height) + var(--sheet-drag-grow)));
+    padding: 46px max(12px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+    border-radius: 24px 24px 0 0;
+  }
+
+  .portrait-drama-player .player-panel.expanded {
+    --sheet-base-height: 100dvh;
+    border-radius: 0;
+  }
+
+  .portrait-drama-player .portrait-share-panel {
+    --sheet-base-height: calc(54dvh + env(safe-area-inset-bottom));
+    min-height: 300px;
+    padding-left: max(20px, env(safe-area-inset-left));
+    padding-right: max(20px, env(safe-area-inset-right));
+  }
+
+  .portrait-drama-player .player-panel::before {
+    width: min(86px, 28vw);
+  }
+
+  .portrait-drama-player .player-episode-grid {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .portrait-drama-player .player-episode-grid button {
+    min-height: 42px;
+    font-size: 0.74rem;
+  }
+
+  .portrait-share-grid {
+    gap: 12px;
+  }
+
+  .portrait-share-icon {
+    width: 52px;
+    height: 52px;
+  }
+}
+
+.portrait-seek-hints {
+  display: none !important;
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  top: 50%;
+  z-index: 17;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+.portrait-seek-hints span {
+  min-width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 50%;
+  background: rgba(0,0,0,0.34);
+  color: rgba(255,255,255,0.72);
+  font-size: 0.72rem;
+  font-weight: 900;
+  opacity: 0.72;
+  backdrop-filter: blur(8px);
+}
+
+@media (max-width: 560px) {
+  .portrait-seek-hints {
+    left: 16px;
+    right: 76px;
+  }
+
+  .portrait-seek-hints span {
+    min-width: 38px;
+    height: 38px;
+    font-size: 0.68rem;
+  }
+}
+
+.anime-clean-card {
+  display: block;
+}
+
+.anime-clean-poster {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.anime-clean-poster img,
+.anime-clean-poster .movies-placeholder {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.anime-clean-poster img {
+  object-fit: cover;
+  object-position: center top;
+}

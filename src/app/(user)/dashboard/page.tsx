@@ -2,19 +2,19 @@ import { auth } from "@/services/auth-service";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { ContentGrid } from "@/components/content-grid";
-import { LogoutButton } from "@/components/logout-button";
 import Link from "next/link";
 import {
   Bookmark, CalendarDays, ChevronRight, Clock3, CreditCard, History,
-  Laptop, Settings, Shield, UserRoundCog,
+  Laptop, UserRoundCog,
 } from "lucide-react";
-import { WatchProgressGrid } from "@/components/watch-progress-grid";
+import { RedeemCodePanel } from "@/components/redeem-code-panel";
+import { ResellerApplicationPanel } from "@/components/reseller-application-panel";
 
 export default async function Dashboard() {
   const user = await auth.currentUser();
   if (!user) redirect("/login");
 
-  const [subscription, watchlist, devices, progress, paymentCount] = await Promise.all([
+  const [subscription, watchlist, devices, progress, paymentCount, redeemCodes, resellerApplication] = await Promise.all([
     db.subscription.findFirst({
       where: { userId: user.id, status: "ACTIVE", expiresAt: { gt: new Date() } },
       include: { plan: true },
@@ -34,6 +34,27 @@ export default async function Dashboard() {
       take: 6,
     }),
     db.payment.count({ where: { userId: user.id } }),
+    db.redeemCode.findMany({
+      where: { buyerId: user.id },
+      include: { plan: { select: { name: true, durationDays: true } }, redeemer: { select: { email: true } } },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+    }).catch(() => []),
+    db.resellerApplication.findFirst({
+      where: { userId: user.id },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        businessName: true,
+        contact: true,
+        channel: true,
+        note: true,
+        status: true,
+        rejectionReason: true,
+        createdAt: true,
+        reviewedAt: true,
+      },
+    }).catch(() => null),
   ]);
 
   const now = Date.now();
@@ -43,11 +64,9 @@ export default async function Dashboard() {
   const elapsed = startsAt && expiresAt ? Math.max(0, now - startsAt) : 0;
   const duration = startsAt && expiresAt ? Math.max(1, expiresAt - startsAt) : 1;
   const planProgress = subscription ? Math.min(100, Math.round(elapsed / duration * 100)) : 0;
-  const initials = user.name.split(/\s+/).slice(0, 2).map(part => part[0]).join("").toUpperCase();
-  const admin = ["SUPER_ADMIN", "ADMIN", "CONTENT_MANAGER"].includes(user.role);
 
   const shortcuts = [
-    { href: "/dashboard/profile", label: "Profil", detail: "Data akun", Icon: UserRoundCog },
+    { href: "/dashboard/preferences", label: "Pengaturan", detail: "Profil & keamanan", Icon: UserRoundCog },
     { href: "/dashboard/subscription", label: "Langganan", detail: subscription?.plan.name ?? "Paket gratis", Icon: CreditCard },
     { href: "/dashboard/devices", label: "Perangkat", detail: `${devices} sesi aktif`, Icon: Laptop },
     { href: "/dashboard/history", label: "Riwayat", detail: `${progress.length} terbaru`, Icon: History },
@@ -55,22 +74,6 @@ export default async function Dashboard() {
 
   return (
     <main className="shell dashboard dashboard-context dashboard-overview">
-      <header className="dashboard-profile-head">
-        <div className="dashboard-identity">
-          <span className="dashboard-avatar">{initials || "U"}</span>
-          <div>
-            <p className="eyebrow">Akun saya</p>
-            <h1>{user.name}</h1>
-            <p>{user.email}</p>
-          </div>
-        </div>
-        <div className="dashboard-actions">
-          {admin && <Link className="btn btn-secondary" href="/admin/dashboard"><Shield size={17}/>Control Center</Link>}
-          <Link className="btn btn-secondary" href="/dashboard/preferences"><Settings size={17}/>Preferensi</Link>
-          <LogoutButton />
-        </div>
-      </header>
-
       <section className="dashboard-subscription-band">
         <div className="dashboard-plan-main">
           <span className="dashboard-plan-icon"><CreditCard size={21}/></span>
@@ -104,13 +107,21 @@ export default async function Dashboard() {
         </div>
       </section>
 
-      <WatchProgressGrid
-        title="Lanjut menonton"
-        items={progress}
-        emptyLabel="Belum ada tontonan"
-        emptyText="Drama yang mulai ditonton akan muncul di sini."
-        showResumeButton
-      />
+      <RedeemCodePanel initialCodes={redeemCodes.map(item => ({
+        id: item.id,
+        code: item.code,
+        status: item.status,
+        redeemedAt: item.redeemedAt?.toISOString() ?? null,
+        createdAt: item.createdAt.toISOString(),
+        plan: item.plan,
+        redeemer: item.redeemer,
+      }))} />
+
+      <ResellerApplicationPanel initialApplication={resellerApplication ? {
+        ...resellerApplication,
+        createdAt: resellerApplication.createdAt.toISOString(),
+        reviewedAt: resellerApplication.reviewedAt?.toISOString() ?? null,
+      } : null} />
 
       {watchlist.length ? (
         <ContentGrid title="Watchlist saya" items={watchlist.map(item => item.content)} />
@@ -119,7 +130,7 @@ export default async function Dashboard() {
           <Bookmark size={24}/>
           <h2>Watchlist masih kosong</h2>
           <p>Simpan drama agar mudah ditemukan kembali.</p>
-          <Link className="btn btn-sm" href="/browse">Jelajahi katalog</Link>
+          <Link className="btn btn-sm" href="/terbaru">Jelajahi katalog</Link>
         </div>
       )}
     </main>

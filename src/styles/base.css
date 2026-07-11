@@ -1,0 +1,78 @@
+/* ============================================
+   CLIPKU STREAMING - Premium Dark UI
+   ============================================ */
+
+/* --- DESIGN TOKENS --- */
+:root {
+  --bg: #03050b;
+  --bg2: #0a0d16;
+  --panel: #111622;
+  --panel2: #1a1f2e;
+  --muted: #8890a6;
+  --brand: #e50914;
+  --brand2: #b9060f;
+  --brand-glow: #e5091440;
+  --line: #1f2536;
+  --line2: #2a3044;
+  --text: #f0f1f5;
+  --text2: #c5c9d6;
+  --accent: #6366f1;
+  --accent2: #8b5cf6;
+  --gold: #f59e0b;
+  --green: #22c55e;
+  --red: #ef4444;
+  --brand-text: #ff7f8d;
+  --radius: 14px;
+  --radius-sm: 8px;
+  --radius-lg: 20px;
+  --shadow: 0 4px 24px #00000066;
+  --shadow-lg: 0 8px 48px #00000088;
+  --transition: 0.28s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* --- RESET --- */
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+button,input,select,textarea{font:inherit;color:inherit}
+img{max-width:100%;display:block}
+button:disabled{opacity:.6;cursor:not-allowed}
+:focus-visible{outline:3px solid #ff4757;outline-offset:3px}
+::selection{background:var(--brand);color:white}
+::-webkit-scrollbar{width:8px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--line2);border-radius:4px}
+
+/* --- ANIMATIONS --- */
+@keyframes fadeInUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes gradientShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+.animate-in{animation:fadeInUp 0.6s var(--transition) forwards}
+
+/* --- NAVBAR --- */
+.nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:20px;padding:14px 5vw;background:linear-gradient(180deg,#03050bee 0%,#03050bdd 100%);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);border-bottom:1px solid #ffffff08;transition:all var(--transition)}
+.brand{font-size:1.5rem;font-weight:900;letter-spacing:-0.5px;background:linear-gradient(135deg,var(--brand),#ff4757);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;transition:all var(--transition)}
+.brand:hover{filter:brightness(1.2);transform:scale(1.03)}
+.navlinks{display:flex;gap:6px}
+.navlinks a{padding:8px 16px;border-radius:var(--radius-sm);color:var(--text2);font-size:0.9rem;font-weight:500;transition:all var(--transition);position:relative}
+.navlinks a:hover{color:white;background:#ffffff0a}
+.navlinks a.active{color:white;background:#ffffff10}
+.nav .spacer{flex:1}
+
+/* --- BUTTONS --- */
+.btn{display:inline-flex;align-items:center;gap:8px;border:0;border-radius:var(--radius-sm);padding:12px 24px;color:white;background:var(--brand);font-weight:650;font-size:0.95rem;cursor:pointer;transition:all var(--transition);white-space:nowrap}
+.btn:hover{background:#ff1a25;transform:translateY(-1px);box-shadow:0 4px 20px var(--brand-glow)}
+.btn:active{transform:translateY(0)}
+.btn-secondary{background:#ffffff10;backdrop-filter:blur(8px);border:1px solid #ffffff14}
+.btn-secondary:hover{background:#ffffff18;box-shadow:0 4px 20px #00000044}
+.btn-ghost{background:transparent;border:1px solid var(--line2);color:var(--text2)}
+.btn-ghost:hover{background:#ffffff08;border-color:#ffffff30;color:white}
+.btn-sm{padding:8px 16px;font-size:0.85rem}
+.btn-lg{padding:16px 32px;font-size:1.1rem;border-radius:var(--radius)}
+.btn-icon{width:40px;height:40px;padding:0;justify-content:center;border-radius:50%}
+.button{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:var(--radius-sm);padding:12px 24px;color:white;background:var(--brand);font-weight:650;cursor:pointer}
+.panel{padding:24px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.muted{color:var(--muted)}
+.eyebrow{margin:0 0 6px;color:var(--brand-text);font-size:.78rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase}

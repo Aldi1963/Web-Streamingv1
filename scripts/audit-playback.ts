@@ -5,6 +5,7 @@ import { extractStreamUrl, selectEpisodePayload } from "../src/lib/stream-utils"
 import { clipku } from "../src/services/clipku-api-service";
 
 const v2Providers = new Set(["melolo", "dramawave", "reelshort", "netshort", "shortmax"]);
+const PROVIDER_SAMPLE_LIMIT = 5;
 
 async function resolve(provider: string, contentId: string, episode: number) {
   let raw: unknown = null;
@@ -75,32 +76,58 @@ async function main() {
   const results: Array<{ provider: string; status: string; detail?: string }> = [];
 
   for (const provider of providers) {
-    const content = await db.content.findFirst({
+    const samples = await db.content.findMany({
       where: { providerSlug: provider.providerSlug, isActive: true },
       orderBy: [{ playbackCheckedAt: "asc" }, { lastSyncedAt: "desc" }],
+      take: PROVIDER_SAMPLE_LIMIT,
       select: { id: true, title: true, clipkuContentId: true },
     });
-    if (!content) continue;
+    if (!samples.length) continue;
 
     let status = "FAILED";
     let detail: string | undefined;
     try {
-      const first = await resolve(provider.providerSlug, content.clipkuContentId, 1);
-      const second = await resolve(provider.providerSlug, content.clipkuContentId, 2);
-      const firstOk = Boolean(first && await mediaResponds(first));
-      const secondOk = Boolean(second && await mediaResponds(second));
-      status = firstOk && secondOk && first !== second ? "OK" : firstOk ? "DEGRADED" : "FAILED";
-      detail = `ep1=${firstOk} ep2=${secondOk} unique=${first !== second}`;
+      const sampleResults: Array<{ id: string; title: string; status: string; detail: string }> = [];
+
+      for (const content of samples) {
+        const first = await resolve(provider.providerSlug, content.clipkuContentId, 1);
+        const second = await resolve(provider.providerSlug, content.clipkuContentId, 2);
+        const firstOk = Boolean(first && await mediaResponds(first));
+        const secondOk = Boolean(second && await mediaResponds(second));
+        const isHealthy = firstOk && secondOk && first !== second;
+        sampleResults.push({
+          id: content.id,
+          title: content.title,
+          status: isHealthy ? "OK" : firstOk ? "DEGRADED" : "FAILED",
+          detail: `ep1=${firstOk} ep2=${secondOk} unique=${first !== second}`,
+        });
+      }
+
+      const best = sampleResults.find((item) => item.status === "OK")
+        ?? sampleResults.find((item) => item.status === "DEGRADED")
+        ?? sampleResults[0];
+      status = best.status;
+      detail = `${best.title}: ${best.detail}`;
+
+      await db.content.updateMany({
+        where: { id: { in: sampleResults.map((item) => item.id) } },
+        data: { playbackCheckedAt: new Date() },
+      });
+
+      if (best.status !== "OK") {
+        const failedTitles = sampleResults.map((item) => `${item.title}=${item.status}`).join(", ");
+        detail = `${detail}; samples=${failedTitles}`;
+      }
     } catch (error) {
       detail = error instanceof Error ? error.message : String(error);
     }
 
-    await db.content.update({
-      where: { id: content.id },
+    await db.content.updateMany({
+      where: { providerSlug: provider.providerSlug, isActive: true },
       data: { playbackStatus: status, playbackCheckedAt: new Date() },
     });
     results.push({ provider: provider.providerSlug, status, detail });
-    console.log(JSON.stringify({ provider: provider.providerSlug, title: content.title, status, detail }));
+    console.log(JSON.stringify({ provider: provider.providerSlug, status, detail, sampled: samples.length }));
   }
 
   const failed = results.filter((item) => item.status !== "OK");

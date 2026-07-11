@@ -31,6 +31,8 @@ export async function POST(request: Request) {
   const provider = await getSetting("PAYMENT_PROVIDER");
   const complete = provider === "aldiqris"
     ? Boolean(await getSetting("ALDIQRIS_API_KEY"))
+    : provider === "clipku_pay"
+    ? Boolean(await getSetting("CLIPKU_PAY_API_KEY"))
     : provider === "pakasir"
     ? Boolean(await getSetting("PAKASIR_API_KEY") && await getSetting("PAKASIR_SLUG"))
     : provider === "midtrans"

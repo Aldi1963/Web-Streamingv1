@@ -1,6 +1,9 @@
 import { db } from "@/lib/db";
+import { extractStreamUrl, extractSubtitleUrl, proxyMediaUrl, selectEpisodePayload } from "@/lib/stream-utils";
 import { clipku } from "./clipku-api-service";
-import { playbackAccess } from "./playback-access-service";
+
+const FREE_EPISODE_LIMIT = 8;
+const PROXY_STREAM_PROVIDERS = new Set(["dramabox", "melolo"]);
 
 function streamValue(data: unknown, keys: string[]): string | undefined {
   if (!data || typeof data !== "object") return undefined;
@@ -26,17 +29,69 @@ function streamValue(data: unknown, keys: string[]): string | undefined {
   return candidates.sort((a, b) => b.score - a.score)[0]?.url;
 }
 
+function upstreamError(data: unknown): string | undefined {
+  if (!data || typeof data !== "object") return undefined;
+  const record = data as Record<string, unknown>;
+  const error = record.error_msg ?? record.error ?? record.message;
+  if (typeof error === "string" && error.trim()) return error.trim();
+  return undefined;
+}
+
 export class WatchService {
-  async authorize(userId: string, contentId: string, episode = 1) {
-    const access = await playbackAccess(userId, episode);
-    if (!access.allowed) throw new Error("Episode 9 dan seterusnya memerlukan paket aktif.");
+  async authorize(userId: string | null, contentId: string, episode = 1) {
     const content = await db.content.findUniqueOrThrow({ where: { id: contentId } });
+    const normalizedEpisode = Math.max(1, Math.floor(episode));
+    if (normalizedEpisode > FREE_EPISODE_LIMIT) {
+      if (!userId) throw new Error("Login diperlukan untuk melanjutkan.");
+      const subscription = await db.subscription.findFirst({
+        where: { userId, status: { in: ["ACTIVE", "TRIAL", "GRACE"] }, expiresAt: { gt: new Date() } },
+        include: { plan: true },
+      });
+      if (!subscription) throw new Error("Langganan aktif diperlukan untuk menonton.");
+    }
+
+    if (PROXY_STREAM_PROVIDERS.has(content.providerSlug)) {
+      const params = new URLSearchParams({
+        provider: content.providerSlug,
+        contentId: content.clipkuContentId,
+        contentDbId: content.id,
+        ep: String(normalizedEpisode),
+      });
+      return {
+        url: `/api/video-proxy?${params.toString()}`,
+        type: "mp4",
+        expiresIn: 300,
+      };
+    }
+
     let response: unknown;
-    try { response = await clipku.getStreamV2(content.providerSlug, content.clipkuContentId, episode); }
-    catch { response = await clipku.getStream(content.providerSlug, content.clipkuContentId, episode); }
-    const url = streamValue(response, ["hls_url", "video_url", "url", "data.hls_url", "data.video_url", "data.url", "result.url"]);
+    let episodePayload: unknown;
+    let url: string | undefined;
+    if (content.providerSlug === "shortmax") {
+      response = await clipku.getStream(content.providerSlug, content.clipkuContentId, normalizedEpisode, content.apiRawResponse);
+      episodePayload = selectEpisodePayload(response, content.providerSlug, normalizedEpisode);
+      url = extractStreamUrl(episodePayload) ?? streamValue(episodePayload, ["hls_url", "video_url", "url", "data.hls_url", "data.video_url", "data.url", "result.url"]);
+      if (!url) {
+        response = await clipku.getShortmaxStreamV2(content.clipkuContentId, normalizedEpisode, content.apiRawResponse);
+      }
+    } else if (content.providerSlug === "drama") {
+      response = await clipku.getStream(content.providerSlug, content.clipkuContentId, normalizedEpisode, content.apiRawResponse);
+    } else {
+      try { response = await clipku.getStreamV2(content.providerSlug, content.clipkuContentId, normalizedEpisode); }
+      catch { response = await clipku.getStream(content.providerSlug, content.clipkuContentId, normalizedEpisode, content.apiRawResponse); }
+    }
+    episodePayload = selectEpisodePayload(response, content.providerSlug, normalizedEpisode);
+    const upstreamMessage = upstreamError(episodePayload);
+    if (upstreamMessage) throw new Error(upstreamMessage);
+    url = extractStreamUrl(episodePayload) ?? streamValue(episodePayload, ["hls_url", "video_url", "url", "data.hls_url", "data.video_url", "data.url", "result.url"]);
     if (!url) throw new Error("Playback URL belum ditemukan.");
-    return { url, type: url.includes(".m3u8") ? "hls" : "mp4", expiresIn: 300, access };
+    const subtitle = extractSubtitleUrl(episodePayload);
+    return {
+      url: proxyMediaUrl(url, { contentId, episode: normalizedEpisode }),
+      subtitle,
+      type: url.includes(".m3u8") ? "hls" : "mp4",
+      expiresIn: 300,
+    };
   }
 }
 export const watchService = new WatchService();

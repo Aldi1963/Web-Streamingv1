@@ -13,11 +13,26 @@ export async function GET(request: NextRequest) {
   }
   const rows = await db.watchProgress.findMany({
     where: { userId: user.id },
-    include: { content: { select: { id: true, title: true, slug: true, posterUrl: true, type: true, providerName: true } } },
+    include: {
+      content: {
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          posterUrl: true,
+          type: true,
+          providerName: true,
+          episodes: { select: { id: true, episodeNumber: true } },
+        },
+      },
+    },
     orderBy: { lastWatchedAt: "desc" },
     take: 100,
   });
-  return NextResponse.json(rows);
+  const latestByContent = rows.filter((row, index, list) =>
+    list.findIndex(item => item.contentId === row.contentId) === index
+  );
+  return NextResponse.json(latestByContent);
 }
 
 export async function POST(request: Request) {

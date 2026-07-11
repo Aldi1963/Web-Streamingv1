@@ -5,7 +5,7 @@ import { useState } from "react";
 
 export function LogoutButton() {
   const [busy, setBusy] = useState(false);
-  return <button className="btn btn-ghost" disabled={busy} onClick={async () => {
+  return <button type="button" className="btn btn-ghost" style={{ width: "100%", justifyContent: "center", gap: 6 }} disabled={busy} onClick={async () => {
     setBusy(true);
     await fetch("/api/auth/logout", { method: "POST" });
     location.href = "/";

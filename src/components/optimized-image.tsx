@@ -9,7 +9,7 @@ type OptimizedImageProps = {
   quality?: number;
 };
 
-const DEFAULT_WIDTHS = [240, 360, 480, 720, 960];
+const DEFAULT_WIDTHS = [96, 160, 240, 320, 480, 640, 960, 1280];
 
 function unwrapImageProxy(src: string) {
   let current = src;
@@ -43,12 +43,12 @@ function cdnUrl(src: string, width: number, quality: number, output: "avif" | "w
 export function OptimizedImage({
   src,
   alt,
-  width = 480,
-  height = 720,
+  width = 320,
+  height = 480,
   sizes = "(max-width: 480px) 33vw, (max-width: 900px) 25vw, 220px",
   className,
   priority = false,
-  quality = 74,
+  quality = 66,
 }: OptimizedImageProps) {
   const widths = DEFAULT_WIDTHS.filter(value => value <= Math.max(width * 2, 480));
   if (!widths.includes(width)) widths.push(width);
@@ -57,7 +57,7 @@ export function OptimizedImage({
     widths.map(value => `${cdnUrl(src, value, quality, output)} ${value}w`).join(", ");
 
   return <picture className="optimized-picture">
-    {/^https?:\/\//i.test(src) && <source type="image/webp" srcSet={srcSet("webp")} sizes={sizes} />}
+    {/https?:\/\//i.test(src) && <source type="image/webp" srcSet={srcSet("webp")} sizes={sizes} />}
     <img
       src={cdnUrl(src, width, quality, "webp")}
       srcSet={/^https?:\/\//i.test(src) ? srcSet("webp") : undefined}

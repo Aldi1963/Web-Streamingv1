@@ -2,9 +2,18 @@ import { auth } from "@/services/auth-service";
 import { redirect } from "next/navigation";
 import { RegisterForm } from "@/components/register-form";
 
-export default async function RegisterPage() {
-  const user = await auth.currentUser();
-  if (user) redirect("/dashboard");
+function safeRedirect(value?: string) {
+  return value?.startsWith("/") && !value.startsWith("//") ? value : "/dashboard";
+}
 
-  return <RegisterForm />;
+export default async function RegisterPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ redirect?: string }>;
+}) {
+  const user = await auth.currentUser();
+  const { redirect: redirectTo } = await searchParams;
+  if (user) redirect(safeRedirect(redirectTo));
+
+  return <RegisterForm redirectTo={safeRedirect(redirectTo)} />;
 }

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Play } from "lucide-react";
+import { Play, Star } from "lucide-react";
 import { ContentCardMetrics } from "@/components/content-card-metrics";
 import { OptimizedImage } from "@/components/optimized-image";
 
@@ -38,14 +38,14 @@ export function ContentGrid({
     <section className="section">
       {title && <div className="section-header">
         <h2>{title}</h2>
-        <Link className="section-link" href="/browse" prefetch={false}>
+        <Link className="section-link" href="/terbaru" prefetch={false}>
           Lihat semua →
         </Link>
       </div>}
       <div className="grid">
         {display.map((item) => (
           <Link
-            href={item.slug === "#" ? "/browse" : `/drama/${item.slug}`}
+            href={item.slug === "#" ? "/terbaru" : `/drama/${item.slug}`}
             className="card"
             key={item.id}
             prefetch={false}
@@ -58,6 +58,12 @@ export function ContentGrid({
                   <span><Play size={30} /></span>
                 </div>
               )}
+              {item.rating ? (
+                <span className="card-badge-rating">
+                  <Star size={10} fill="currentColor" />
+                  {item.rating.toFixed(1).replace(".0", "")}
+                </span>
+              ) : null}
             </div>
             <div className="card-body">
               <h3>{item.title}</h3>
