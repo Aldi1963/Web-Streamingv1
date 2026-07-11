@@ -116,7 +116,12 @@ export function AccountCenter({ section }: { section: string }) {
 
     {["history", "favorites"].includes(section) && <div className="grid continue-grid dashboard-library-grid">{library.map(row => {
       const content = row.content || row; const id = row.id || content.id;
-      const href = row.lastWatchedAt ? `/watch/${content.id}` : `/drama/${content.slug}`;
+      const episode = row.lastWatchedAt
+        ? content.episodes?.find((item: { id: string }) => item.id === row.episodeId)
+        : null;
+      const href = row.lastWatchedAt
+        ? `/watch/${content.id}${episode ? `?ep=${episode.episodeNumber}` : ""}`
+        : `/drama/${content.slug}`;
       return <article className="card progress-card dashboard-library-card" key={id}>
         <Link href={href} className="dashboard-library-poster">
           <div className="card-poster">
@@ -131,7 +136,7 @@ export function AccountCenter({ section }: { section: string }) {
           <div className="dashboard-library-actions">
             <Link className="btn btn-sm" href={href}>Buka</Link>
             <button className="btn btn-sm btn-secondary" aria-label={`Hapus ${content.title}`} onClick={async () => {
-          const ok = await request("/api/me/library", "DELETE", { type: section === "history" ? "progress" : "favorite", id: section === "history" ? row.id : content.id });
+          const ok = await request("/api/me/library", "DELETE", { type: section === "history" ? "progress" : "favorite", id: content.id });
           if (ok) setLibrary(items => items.filter(item => item !== row));
         }}><Trash2 size={14} />Hapus</button>
           </div>

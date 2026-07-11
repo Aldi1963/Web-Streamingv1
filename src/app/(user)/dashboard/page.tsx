@@ -11,6 +11,7 @@ import { RedeemCodePanel } from "@/components/redeem-code-panel";
 import { ResellerApplicationPanel } from "@/components/reseller-application-panel";
 import { WatchProgressGrid } from "@/components/watch-progress-grid";
 import { activeSubscriptionWhere } from "@/services/playback-access-service";
+import { latestProgressByContent } from "@/lib/watch-progress";
 
 export default async function Dashboard() {
   const user = await auth.currentUser();
@@ -26,7 +27,7 @@ export default async function Dashboard() {
       where: { userId: user.id },
       include: { content: true },
       orderBy: { createdAt: "desc" },
-      take: 6,
+      take: 100,
     }),
     db.watchlist.count({ where: { userId: user.id } }),
     db.deviceSession.count({ where: { userId: user.id, expiresAt: { gt: new Date() } } }),
@@ -61,6 +62,7 @@ export default async function Dashboard() {
   ]);
 
   const now = Date.now();
+  const recentProgress = latestProgressByContent(progress);
   const expiresAt = subscription?.expiresAt.getTime();
   const startsAt = subscription?.startsAt.getTime();
   const daysLeft = expiresAt ? Math.max(0, Math.ceil((expiresAt - now) / 86_400_000)) : 0;
@@ -79,7 +81,7 @@ export default async function Dashboard() {
         <div className="dashboard-home-main">
           <WatchProgressGrid
             title="Lanjut menonton"
-            items={progress.slice(0, 4)}
+            items={recentProgress.slice(0, 4)}
             emptyLabel="Belum ada tontonan"
             emptyText="Drama yang Anda tonton akan tampil di sini."
             showResumeButton
@@ -114,7 +116,7 @@ export default async function Dashboard() {
 
           <section className="dashboard-metrics" aria-label="Ringkasan aktivitas">
             <div><Bookmark size={17}/><span>Watchlist<strong>{watchlistCount}</strong></span></div>
-            <div><Clock3 size={17}/><span>Ditonton<strong>{progress.length}</strong></span></div>
+            <div><Clock3 size={17}/><span>Ditonton<strong>{recentProgress.length}</strong></span></div>
             <div><Laptop size={17}/><span>Perangkat<strong>{devices}</strong></span></div>
             <div><CreditCard size={17}/><span>Transaksi<strong>{paymentCount}</strong></span></div>
           </section>
