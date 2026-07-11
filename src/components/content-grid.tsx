@@ -19,9 +19,11 @@ type ContentItem = {
 export function ContentGrid({
   title,
   items = [],
+  viewAllHref = "/terbaru",
 }: {
   title: string;
   items?: Array<ContentItem>;
+  viewAllHref?: string | null;
 }) {
   const display: Array<ContentItem> = items.length
     ? items
@@ -38,9 +40,9 @@ export function ContentGrid({
     <section className="section">
       {title && <div className="section-header">
         <h2>{title}</h2>
-        <Link className="section-link" href="/terbaru" prefetch={false}>
+        {viewAllHref && <Link className="section-link" href={viewAllHref} prefetch={false}>
           Lihat semua →
-        </Link>
+        </Link>}
       </div>}
       <div className="grid">
         {display.map((item) => (
