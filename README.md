@@ -39,15 +39,3 @@ Admin menyimpan JSON mapping pada `ApiEndpoint.responseMappingJson`, misalnya `{
 ## Pembayaran
 
 Schema transaksi dan konfigurasi Pakasir/Midtrans/Xendit tersedia. Implementasi webhook production wajib memverifikasi signature sesuai dokumentasi gateway, idempotent terhadap nomor invoice, dan baru mengaktifkan subscription setelah status terverifikasi.
-
-Lihat [STATUS_PENGERJAAN.md](./STATUS_PENGERJAAN.md) untuk status implementasi rinci.
-Lihat [TODO_TEKNIS.md](./TODO_TEKNIS.md) untuk daftar pekerjaan teknis yang belum selesai.
-Lihat [DEPLOYMENT_STATUS.md](./DEPLOYMENT_STATUS.md) untuk status deploy VPS dan produksi.
-Lihat [CHANGELOG.md](./CHANGELOG.md) untuk riwayat perubahan.
-Lihat [KNOWN_ISSUES.md](./KNOWN_ISSUES.md) untuk daftar isu yang masih perlu dibereskan.
-Lihat [NEXT_ACTIONS.md](./NEXT_ACTIONS.md) untuk langkah berikutnya.
-Lihat [CHECKLIST_PRODUCTION.md](./CHECKLIST_PRODUCTION.md) untuk checklist sebelum live.
-Lihat [RILIS_VERSI_1.md](./RILIS_VERSI_1.md) untuk catatan rilis versi pertama.
-Lihat [ROADMAP.md](./ROADMAP.md) untuk arah pengembangan.
-Lihat [ARSIKTEKTUR.md](./ARSIKTEKTUR.md) untuk gambaran struktur sistem.
-Lihat [DAFTAR_ENDPOINT.md](./DAFTAR_ENDPOINT.md) untuk daftar endpoint penting.
