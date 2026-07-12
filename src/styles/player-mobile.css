@@ -1070,3 +1070,123 @@
   border-top: 0;
   padding-top: 0;
 }
+
+/* Right-side compact settings popover + restore playback controls */
+.portrait-drama-player .player-bottom-controls {
+  display: grid !important;
+  opacity: 0;
+  pointer-events: none;
+  padding: 10px 12px max(10px, env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, transparent, rgba(0,0,0,0.66) 38%, rgba(0,0,0,0.88));
+  transform: translateY(8px);
+}
+
+.portrait-drama-player .player-bottom-controls.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.portrait-drama-player .player-command-row {
+  gap: 6px;
+}
+
+.portrait-drama-player .player-command-row .player-pill-btn,
+.portrait-drama-player .player-command-row .player-icon-btn {
+  min-width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(8,8,10,0.62);
+}
+
+.portrait-drama-player .player-command-row .player-pill-btn {
+  max-width: 150px;
+  padding: 0 10px;
+  overflow: hidden;
+  font-size: 0.7rem;
+  text-overflow: ellipsis;
+}
+
+.portrait-drama-player .player-time-row {
+  gap: 8px;
+  font-size: 0.72rem;
+}
+
+.portrait-drama-player .player-settings-panel {
+  --sheet-base-height: auto;
+  position: absolute;
+  left: auto;
+  right: max(58px, calc(env(safe-area-inset-right) + 58px));
+  top: 50%;
+  bottom: auto;
+  width: min(248px, calc(100vw - 86px));
+  height: auto;
+  min-height: 0;
+  max-height: min(360px, calc(100dvh - 150px));
+  overflow-y: auto;
+  padding: 12px;
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 14px;
+  background: rgba(12,12,15,0.94);
+  box-shadow: 0 12px 34px rgba(0,0,0,0.44);
+  transform: translateY(-50%);
+  animation: none;
+}
+
+.portrait-drama-player .player-settings-panel.expanded {
+  --sheet-base-height: auto;
+  border-radius: 14px;
+}
+
+.portrait-drama-player .player-settings-panel::before,
+.portrait-drama-player .player-settings-panel .portrait-sheet-drag-zone {
+  display: none;
+}
+
+.portrait-drama-player .player-settings-panel .player-panel-head {
+  min-height: 26px;
+  margin: 0 0 8px;
+  padding: 0 0 8px;
+}
+
+.portrait-drama-player .player-settings-panel .player-panel-head strong {
+  font-size: 0.88rem;
+}
+
+.portrait-drama-player .player-setting-row {
+  min-height: 34px;
+  padding: 7px 8px;
+  border-radius: 9px;
+  font-size: 0.76rem;
+}
+
+.portrait-drama-player .player-setting-row small {
+  max-width: 78px;
+  font-size: 0.66rem;
+}
+
+.portrait-drama-player .player-settings-panel .player-setting-group button {
+  min-height: 32px;
+  padding: 6px 8px;
+  font-size: 0.75rem;
+}
+
+.portrait-drama-player .player-settings-back {
+  width: 26px;
+  height: 26px;
+}
+
+.portrait-drama-player:has(.player-settings-panel) .portrait-sheet-backdrop {
+  background: transparent;
+}
+
+@media (max-width: 420px) {
+  .portrait-drama-player .player-settings-panel {
+    right: 54px;
+    width: min(224px, calc(100vw - 76px));
+  }
+
+  .portrait-drama-player .player-command-row .player-pill-btn {
+    max-width: 118px;
+  }
+}
