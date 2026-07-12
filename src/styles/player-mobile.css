@@ -995,3 +995,78 @@
   opacity: 1;
   pointer-events: auto;
 }
+
+/* Nested settings menu */
+.portrait-drama-player .player-settings-menu {
+  display: grid;
+  gap: 7px;
+}
+
+.portrait-drama-player .player-setting-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  background: rgba(255,255,255,0.055);
+  color: #f5f6fa;
+  text-align: left;
+  font-size: 0.8rem;
+  font-weight: 750;
+}
+
+.portrait-drama-player .player-setting-row:disabled {
+  opacity: 0.48;
+}
+
+.portrait-drama-player .player-setting-row span {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  gap: 7px;
+}
+
+.portrait-drama-player .player-setting-row small {
+  max-width: 110px;
+  overflow: hidden;
+  color: rgba(255,255,255,0.58);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.portrait-drama-player .player-settings-head {
+  position: relative;
+  min-height: 30px;
+}
+
+.portrait-drama-player .player-settings-back {
+  position: absolute;
+  left: 0;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+}
+
+.portrait-drama-player .player-setting-empty {
+  margin: 0;
+  padding: 8px 2px;
+  color: rgba(255,255,255,0.58);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.portrait-drama-player .player-setting-group.compact-list {
+  border-top: 0;
+  padding-top: 0;
+}

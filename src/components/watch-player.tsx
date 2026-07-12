@@ -31,6 +31,7 @@ type LockableScreenOrientation = ScreenOrientation & {
 };
 type FullscreenOrientationMode = "landscape" | "portrait" | "none";
 type SheetMode = "peek" | "expanded";
+type SettingsView = "main" | "quality" | "audio" | "subtitle" | "speed";
 const CONTROL_HIDE_DELAY_MS = 1600;
 
 function getScreenOrientation() {
@@ -107,6 +108,7 @@ export function WatchPlayer({
   const [controlsVisible, setControlsVisible] = useState(true);
   const [episodeOpen, setEpisodeOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsView, setSettingsView] = useState<SettingsView>("main");
   const [shareOpen, setShareOpen] = useState(false);
   const [sheetMode, setSheetMode] = useState<SheetMode>("peek");
   const [sheetDragOffset, setSheetDragOffset] = useState(0);
@@ -425,6 +427,18 @@ export function WatchPlayer({
     setSheetClosing(false);
     setEpisodeOpen(true);
     setSettingsOpen(false);
+    setSettingsView("main");
+    setShareOpen(false);
+    setSheetMode("peek");
+    setSheetDragOffset(0);
+  }
+
+  function openSettingsPanel(view: SettingsView = "main") {
+    clearSheetCloseTimer();
+    setSheetClosing(false);
+    setSettingsOpen(true);
+    setSettingsView(view);
+    setEpisodeOpen(false);
     setShareOpen(false);
     setSheetMode("peek");
     setSheetDragOffset(0);
@@ -723,15 +737,7 @@ export function WatchPlayer({
             </button>
             <button
               type="button"
-              onClick={() => {
-                clearSheetCloseTimer();
-                setSheetClosing(false);
-                setSettingsOpen(true);
-                setEpisodeOpen(false);
-                setShareOpen(false);
-                setSheetMode("peek");
-                setSheetDragOffset(0);
-              }}
+              onClick={() => openSettingsPanel()}
               aria-label="Pengaturan player"
             >
               <Settings size={24} />
@@ -761,7 +767,7 @@ export function WatchPlayer({
         <button type="button" className="player-icon-btn" onClick={() => { episodeOpen ? closePortraitSheet() : openEpisodeSheet(); }} aria-label="Daftar episode">
           <ListVideo size={20} />
         </button>
-        <button type="button" className="player-icon-btn" onClick={() => { setSettingsOpen(!settingsOpen); setEpisodeOpen(false); setShareOpen(false); setSheetMode("peek"); setSheetDragOffset(0); }} aria-label="Pengaturan player">
+        <button type="button" className="player-icon-btn" onClick={() => { settingsOpen ? closePortraitSheet() : openSettingsPanel(); }} aria-label="Pengaturan player">
           <Settings size={20} />
         </button>
       </div>
@@ -839,7 +845,7 @@ export function WatchPlayer({
               Next <ChevronRight size={17} />
             </button>
           )}
-          <button type="button" className="player-pill-btn" onClick={() => { setSettingsOpen(!settingsOpen); setEpisodeOpen(false); setShareOpen(false); setSheetMode("peek"); setSheetDragOffset(0); }}>
+          <button type="button" className="player-pill-btn" onClick={() => { settingsOpen ? closePortraitSheet() : openSettingsPanel(); }}>
             <Settings size={17} /> {activeQualityLabel}
           </button>
           {activeSubtitle && (
@@ -902,27 +908,65 @@ export function WatchPlayer({
             onPointerCancel={handleSheetPointerUp}
             aria-hidden="true"
           />
-          <div className="player-panel-head">
-            <strong>Pengaturan</strong>
-          </div>
-          <div className="player-setting-group">
-            <span><Gauge size={16} /> Kualitas</span>
-            {visibleQualitySources.map(source => (
-              <button
-                key={source.url}
-                type="button"
-                className={source.url === activeSrc ? "active" : ""}
-                onClick={() => { setActiveSrc(source.url); resumeApplied.current = false; setSettingsOpen(false); }}
-              >
-                {source.label}
-                {source.url === activeSrc && <Check size={15} />}
+          <div className="player-panel-head player-settings-head">
+            {settingsView !== "main" && (
+              <button type="button" className="player-settings-back" onClick={() => setSettingsView("main")} aria-label="Kembali ke pengaturan">
+                <ChevronLeft size={18} />
               </button>
-            ))}
+            )}
+            <strong>
+              {settingsView === "main" && "Pengaturan"}
+              {settingsView === "quality" && "Kualitas"}
+              {settingsView === "audio" && "Bahasa Audio"}
+              {settingsView === "subtitle" && "Subtitle"}
+              {settingsView === "speed" && "Kecepatan"}
+            </strong>
           </div>
-          {languages.length > 1 && (
-            <div className="player-setting-group">
-              <span><Languages size={16} /> Bahasa Audio</span>
-              {languages.map(language => (
+
+          {settingsView === "main" && (
+            <div className="player-settings-menu">
+              <button type="button" className="player-setting-row" onClick={() => setSettingsView("quality")}>
+                <span><Gauge size={16} /> Kualitas</span>
+                <small>{activeQualityLabel}</small>
+                <ChevronRight size={17} />
+              </button>
+              <button type="button" className="player-setting-row" onClick={() => setSettingsView("audio")} disabled={languages.length <= 1}>
+                <span><Languages size={16} /> Bahasa Audio</span>
+                <small>{activeLanguage ?? "Tidak tersedia"}</small>
+                <ChevronRight size={17} />
+              </button>
+              <button type="button" className="player-setting-row" onClick={() => setSettingsView("subtitle")}>
+                <span><Captions size={16} /> Subtitle</span>
+                <small>{activeSubtitle ? (captionsEnabled ? "Indonesia" : "Mati") : "Tidak tersedia"}</small>
+                <ChevronRight size={17} />
+              </button>
+              <button type="button" className="player-setting-row" onClick={() => setSettingsView("speed")}>
+                <span><Gauge size={16} /> Kecepatan</span>
+                <small>{speed}x</small>
+                <ChevronRight size={17} />
+              </button>
+            </div>
+          )}
+
+          {settingsView === "quality" && (
+            <div className="player-setting-group compact-list">
+              {visibleQualitySources.map(source => (
+                <button
+                  key={source.url}
+                  type="button"
+                  className={source.url === activeSrc ? "active" : ""}
+                  onClick={() => { setActiveSrc(source.url); resumeApplied.current = false; }}
+                >
+                  {source.label}
+                  {source.url === activeSrc && <Check size={15} />}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {settingsView === "audio" && (
+            <div className="player-setting-group compact-list">
+              {languages.length > 1 ? languages.map(language => (
                 <button
                   key={language}
                   type="button"
@@ -938,28 +982,32 @@ export function WatchPlayer({
                 >
                   {language}{language === activeLanguage && <Check size={15} />}
                 </button>
+              )) : <p className="player-setting-empty">Bahasa audio tidak tersedia untuk sumber ini.</p>}
+            </div>
+          )}
+
+          {settingsView === "subtitle" && (
+            <div className="player-setting-group compact-list">
+              <button type="button" className={!captionsEnabled ? "active" : ""} onClick={() => setCaptionsEnabled(false)}>
+                Mati {!captionsEnabled && <Check size={15} />}
+              </button>
+              {activeSubtitle ? (
+                <button type="button" className={captionsEnabled ? "active" : ""} onClick={() => setCaptionsEnabled(true)}>
+                  Indonesia {captionsEnabled && <Check size={15} />}
+                </button>
+              ) : <p className="player-setting-empty">Subtitle tidak tersedia untuk episode ini.</p>}
+            </div>
+          )}
+
+          {settingsView === "speed" && (
+            <div className="player-setting-group compact-list">
+              {[0.75, 1, 1.25, 1.5, 2].map(value => (
+                <button key={value} type="button" className={speed === value ? "active" : ""} onClick={() => setSpeed(value)}>
+                  {value}x {speed === value && <Check size={15} />}
+                </button>
               ))}
             </div>
           )}
-          <div className="player-setting-group">
-            <span><Captions size={16} /> Bahasa Subtitle</span>
-            <button type="button" className={!captionsEnabled ? "active" : ""} onClick={() => setCaptionsEnabled(false)}>
-              Mati {!captionsEnabled && <Check size={15} />}
-            </button>
-            {activeSubtitle && (
-              <button type="button" className={captionsEnabled ? "active" : ""} onClick={() => setCaptionsEnabled(true)}>
-                Indonesia {captionsEnabled && <Check size={15} />}
-              </button>
-            )}
-          </div>
-          <div className="player-setting-group">
-            <span><Gauge size={16} /> Kecepatan</span>
-            {[0.75, 1, 1.25, 1.5, 2].map(value => (
-              <button key={value} type="button" className={speed === value ? "active" : ""} onClick={() => setSpeed(value)}>
-                {value}x {speed === value && <Check size={15} />}
-              </button>
-            ))}
-          </div>
         </div>
       )}
 
