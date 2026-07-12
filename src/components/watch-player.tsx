@@ -539,22 +539,39 @@ export function WatchPlayer({
     showControls(true);
   }
 
-  function handleTouchEnd(event: TouchEvent<HTMLDivElement>) {
+  function handlePortraitSwipe(touch: { clientX: number; clientY: number }, clearStart = false) {
     const start = touchStartRef.current;
-    touchStartRef.current = null;
-    if (!portraitPlayerMode || !start) return;
-    const touch = event.changedTouches[0];
-    if (!touch) return;
+    if (clearStart) touchStartRef.current = null;
+    if (!portraitPlayerMode || !start || episodeOpen || settingsOpen || shareOpen) return false;
     const dx = touch.clientX - start.x;
     const dy = touch.clientY - start.y;
     const absX = Math.abs(dx);
     const absY = Math.abs(dy);
-    if (episodeOpen || settingsOpen || shareOpen) return;
-    if (absY >= 70 && absY >= absX * 1.25) {
+    if (absY >= 56 && absY >= absX * 1.15) {
+      touchStartRef.current = null;
       if (dy < 0 && hasNextEpisode) void switchEpisode(episodeNumber + 1);
       if (dy > 0 && hasPreviousEpisode) void switchEpisode(episodeNumber - 1);
-      return;
+      return true;
     }
+    return false;
+  }
+
+  function handleTouchMove(event: TouchEvent<HTMLDivElement>) {
+    const touch = event.touches[0];
+    if (!touch) return;
+    if (handlePortraitSwipe(touch)) event.preventDefault();
+  }
+
+  function handleTouchEnd(event: TouchEvent<HTMLDivElement>) {
+    const start = touchStartRef.current;
+    const touch = event.changedTouches[0];
+    if (!start || !touch) return;
+    if (handlePortraitSwipe(touch, true)) return;
+    if (!portraitPlayerMode || episodeOpen || settingsOpen || shareOpen) return;
+    const dx = touch.clientX - start.x;
+    const dy = touch.clientY - start.y;
+    const absX = Math.abs(dx);
+    const absY = Math.abs(dy);
     if (absX < 18 && absY < 18) {
       const now = Date.now();
       const lastTap = lastTapRef.current;
@@ -697,8 +714,9 @@ export function WatchPlayer({
       ref={shellRef}
       className={`watch-player-shell${controlsVisible ? " controls-visible" : ""}${portraitPlayerMode ? " portrait-drama-player" : ""}`}
       onMouseMove={() => showControls(true)}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
+      onTouchStartCapture={handleTouchStart}
+      onTouchMoveCapture={handleTouchMove}
+      onTouchEndCapture={handleTouchEnd}
     >
       <video
         ref={ref}
