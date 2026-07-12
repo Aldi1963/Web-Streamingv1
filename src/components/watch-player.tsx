@@ -710,7 +710,7 @@ export function WatchPlayer({
         className="watch-video"
         poster={poster}
         playsInline
-        onClick={togglePlay}
+        onClick={() => showControls(true)}
         onPlay={() => { cancelAutoplay(); showControls(true); }}
         onPause={() => { showControls(false); }}
       >
