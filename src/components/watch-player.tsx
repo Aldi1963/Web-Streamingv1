@@ -758,6 +758,10 @@ export function WatchPlayer({
           </div>
 
           <div className="portrait-player-side" aria-label="Aksi video">
+            <button type="button" onClick={togglePlay} aria-label={playing ? "Jeda video" : "Putar video"}>
+              {playing ? <Pause size={24} /> : <Play size={24} fill="currentColor" />}
+              <span>{playing ? "Jeda" : "Putar"}</span>
+            </button>
             <button type="button" onClick={() => undefined} aria-label="Simpan video">
               <Bookmark size={24} />
               <span>Simpan</span>
