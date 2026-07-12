@@ -678,7 +678,7 @@ export function WatchPlayer({
         {...{ referrerPolicy: "no-referrer" }}
         crossOrigin={activeSrc.startsWith("/api/") ? "anonymous" : undefined}
         autoPlay={autoplay}
-        controls={portraitPlayerMode}
+        controls={false}
         preload="metadata"
         className="watch-video"
         poster={poster}
@@ -720,6 +720,22 @@ export function WatchPlayer({
             <button type="button" onClick={openEpisodeSheet} aria-label="Pilih episode">
               <ListVideo size={24} />
               <span>Episode</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                clearSheetCloseTimer();
+                setSheetClosing(false);
+                setSettingsOpen(true);
+                setEpisodeOpen(false);
+                setShareOpen(false);
+                setSheetMode("peek");
+                setSheetDragOffset(0);
+              }}
+              aria-label="Pengaturan player"
+            >
+              <Settings size={24} />
+              <span>Setelan</span>
             </button>
             <button type="button" onClick={openShareSheet} aria-label="Bagikan video">
               <Share2 size={24} />
