@@ -483,15 +483,13 @@
   display: none !important;
 }
 
-.portrait-player-top,
-.portrait-player-side {
+.portrait-player-top {
   opacity: 0;
   pointer-events: none;
   transition: opacity .18s ease, transform .18s ease;
 }
 
-.portrait-drama-player.controls-visible .portrait-player-top,
-.portrait-drama-player.controls-visible .portrait-player-side {
+.portrait-drama-player.controls-visible .portrait-player-top {
   opacity: 1;
   pointer-events: auto;
 }
@@ -503,7 +501,10 @@
   z-index: 18;
   display: grid;
   gap: 18px;
+  opacity: 1;
+  pointer-events: auto;
   transform: translateY(-35%);
+  transition: opacity .18s ease, transform .18s ease;
 }
 
 .portrait-drama-player.controls-visible .portrait-player-side {
