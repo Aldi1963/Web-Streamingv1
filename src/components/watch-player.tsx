@@ -194,7 +194,11 @@ export function WatchPlayer({
           if (autoplay) void video.play().catch(() => undefined);
         }
       });
+    setCurrentTime(0);
+    setDuration(0);
+
     } else {
+      video.currentTime = 0;
       video.src = activeSrc;
       video.load();
       if (autoplay) void video.play().catch(() => undefined);
@@ -285,10 +289,12 @@ export function WatchPlayer({
     };
     video.addEventListener("ended", next);
     const restorePosition = () => {
-      if (resumeApplied.current || !resumeAtSeconds || resumeAtSeconds <= 0 || !Number.isFinite(video.duration)) return;
+      const isInitialEpisode = episodeNumber === (currentEpisodeNumber ?? 1) && episodeStateId === episodeId;
+      if (!isInitialEpisode || resumeApplied.current || !resumeAtSeconds || resumeAtSeconds <= 0 || !Number.isFinite(video.duration)) return;
       const target = Math.min(Math.max(0, resumeAtSeconds), Math.max(0, video.duration - 1));
       if (target > 0) {
         video.currentTime = target;
+        setCurrentTime(target);
         resumeApplied.current = true;
       }
     };
@@ -307,7 +313,7 @@ export function WatchPlayer({
       if (hideTimer.current) clearTimeout(hideTimer.current);
       cancelAutoplay();
     };
-  }, [activeSrc, autoNext, cancelAutoplay, contentId, defaultMuted, episodeNumber, episodeStateId, episodes, resumeAtSeconds, saveProgress, speed]);
+  }, [activeSrc, autoNext, cancelAutoplay, contentId, currentEpisodeNumber, defaultMuted, episodeId, episodeNumber, episodeStateId, episodes, resumeAtSeconds, saveProgress, speed]);
 
   useEffect(() => {
     const video = ref.current;
@@ -657,6 +663,13 @@ export function WatchPlayer({
         ?? nextSources.find(source => source.language === activeLanguage)
         ?? nextSources[0];
       const nextSubtitle = typeof result.subtitle === "string" && result.subtitle ? result.subtitle : undefined;
+      const video = ref.current;
+      if (video) {
+        video.pause();
+        video.currentTime = 0;
+      }
+      setCurrentTime(0);
+      setDuration(0);
       setEpisodeNumber(targetEpisodeNumber);
       setEpisodeStateId(target.id);
       setActiveSubtitle(nextSubtitle);
